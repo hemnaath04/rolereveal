@@ -1,14 +1,14 @@
 import { defineManifest } from '@crxjs/vite-plugin';
 import pkg from './package.json';
 
-// AI Jobby runs on every site so it can detect a job posting anywhere. It does
+// RoleReveal runs on every site so it can detect a job posting anywhere. It does
 // NOT score random pages: the content script only injects when an adapter
 // confirms a real job posting (site-specific selectors, or the generic
 // JSON-LD/heading/heuristic gate). That's why GitHub/Gmail stay untouched.
 const JOB_SITE_MATCHES = ['<all_urls>'];
 
 /**
- * MV3 manifest for AI Jobby.
+ * MV3 manifest for RoleReveal.
  *
  * Key choices:
  * - The background service worker (type: module) makes all LLM network calls.
@@ -22,16 +22,16 @@ const JOB_SITE_MATCHES = ['<all_urls>'];
  */
 export default defineManifest({
   manifest_version: 3,
-  name: 'AI Jobby',
+  // Keyword-rich store title (the name field is the top Web Store SEO lever);
+  // "RoleReveal" alone is the short brand used in the UI.
+  name: 'RoleReveal — AI Job Fit & Resume Match Score',
   version: pkg.version,
   description: pkg.description,
-  // Storage for resumes/settings/tracker; scripting/activeTab for manual runs
-  // from the popup; tabs to read the active tab URL/title.
   permissions: ['storage', 'activeTab', 'contextMenus'],
   host_permissions: ['<all_urls>'],
   action: {
     default_popup: 'src/popup/index.html',
-    default_title: 'AI Jobby',
+    default_title: 'RoleReveal',
   },
   options_page: 'src/options/index.html',
   background: {

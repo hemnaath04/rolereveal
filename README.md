@@ -1,4 +1,4 @@
-# AI Jobby
+# RoleReveal
 
 A Chrome / Edge (Manifest V3) extension that scores how well **your** resume
 matches the job posting you're viewing — an **Apply / Maybe / Skip** verdict, a
@@ -40,7 +40,7 @@ any job site.
 | **Backend proxy** (separate repo) | Holds the real LLM key server-side and enforces per-user rate limits, so the published extension ships **no key**. |
 
 By default the extension sends the **job description** and your **selected
-resume** to the AI Jobby backend, which forwards them to an LLM to compute the
+resume** to the RoleReveal backend, which forwards them to an LLM to compute the
 score. You can switch to your **own provider + key** in Options, in which case
 requests go directly to the provider you choose. See **[Privacy](./PRIVACY.md)**.
 

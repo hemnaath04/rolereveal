@@ -24,7 +24,7 @@ class LlmError extends Error {}
 function requireKey(settings: Settings) {
   if (settings.provider !== 'custom' && !settings.apiKey.trim()) {
     throw new LlmError(
-      `No API key set. Add your ${settings.provider} key in AI Jobby options.`,
+      `No API key set. Add your ${settings.provider} key in RoleReveal options.`,
     );
   }
 }

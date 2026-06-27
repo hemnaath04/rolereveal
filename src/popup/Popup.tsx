@@ -27,7 +27,7 @@ export function Popup() {
     <div className="popup">
       <div className="brand">
         <img className="logo" src={chrome.runtime.getURL('icons/icon48.png')} alt="" />
-        <h1>AI Jobby</h1>
+        <h1>RoleReveal</h1>
         <span className="spacer" />
         <button className="btn ghost small" onClick={() => chrome.runtime.openOptionsPage()}>
           Options

@@ -43,7 +43,7 @@ async function handleEvaluate(
   const settings = await getSettings();
   const resumes = await getEnabledResumes();
   if (resumes.length === 0) {
-    return { ok: false, error: 'No enabled resumes. Add one in AI Jobby options.' };
+    return { ok: false, error: 'No enabled resumes. Add one in RoleReveal options.' };
   }
   if (msg.job.jdText.trim().length < 80) {
     return {
@@ -144,12 +144,12 @@ chrome.runtime.onMessage.addListener((msg: Message, _sender, sendResponse) => {
   return true; // async response
 });
 
-// Right-click → "AI Jobby: evaluate selected text as JD" fallback for sites
+// Right-click → "RoleReveal: evaluate selected text as JD" fallback for sites
 // where auto-detection fails.
 chrome.runtime.onInstalled.addListener(() => {
   chrome.contextMenus.create({
     id: 'ai-jobby-eval-selection',
-    title: 'AI Jobby: evaluate selected text as JD',
+    title: 'RoleReveal: evaluate selected text as JD',
     contexts: ['selection'],
   });
 });

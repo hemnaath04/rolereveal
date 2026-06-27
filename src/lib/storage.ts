@@ -1,5 +1,5 @@
 // ---------------------------------------------------------------------------
-// Thin typed wrappers around chrome.storage.local. Everything AI Jobby persists
+// Thin typed wrappers around chrome.storage.local. Everything RoleReveal persists
 // (resumes, settings, tracker, eval cache) lives here and never leaves the
 // machine — the only outbound network call is to the LLM provider the user picks.
 // ---------------------------------------------------------------------------

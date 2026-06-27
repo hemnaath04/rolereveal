@@ -1,8 +1,8 @@
-# AI Jobby — Privacy Policy
+# RoleReveal — Privacy Policy
 
 _Last updated: 2026-06-27_
 
-AI Jobby is a browser extension that scores the job posting you're viewing
+RoleReveal is a browser extension that scores the job posting you're viewing
 against your resume. This policy explains exactly what data it handles.
 
 ## What is stored, and where
@@ -13,30 +13,30 @@ described in "What is sent for scoring" below:
 - Your settings (provider, model, thresholds, preferences)
 - Your saved application tracker entries
 
-AI Jobby does **not** have user accounts and does **not** collect analytics,
+RoleReveal does **not** have user accounts and does **not** collect analytics,
 advertising identifiers, or browsing history.
 
 ## What is sent for scoring
 When a job posting is scored, the extension sends the **job description text**
-from the page and your **selected resume text** to the AI Jobby backend
+from the page and your **selected resume text** to the RoleReveal backend
 (`ai-jobby-backend.vercel.app`), which forwards them to a large language model
 (LLM) to compute the match score and analysis. The result is returned to the
 extension and displayed.
 
 - **Personal info is masked first (on by default).** Before the resume leaves
-  your device, AI Jobby redacts your name, email, phone number, and links, and
+  your device, RoleReveal redacts your name, email, phone number, and links, and
   replaces resume labels with generic ones ("Resume 1") — so your contact details
   and name are **not** sent to the backend or the LLM. Skills and experience are
   kept so scoring still works. You can toggle this in Options.
 - This data is sent **only** to generate a score, when a job posting is detected
   or you trigger a scoring action.
-- The AI Jobby backend does **not** persistently store your resume or job
+- The RoleReveal backend does **not** persistently store your resume or job
   descriptions; they are processed transiently to produce the score.
 - The request is processed by the configured LLM provider, whose use of the data
   is governed by that provider's own privacy policy.
 - **You can avoid the backend entirely:** set your own provider and API key in
   the extension's Options. Then scoring requests go directly from your browser to
-  the provider you choose, not through the AI Jobby backend.
+  the provider you choose, not through the RoleReveal backend.
 
 ## What is NOT collected
 - No selling or sharing of personal data with third parties for advertising.
@@ -47,7 +47,7 @@ extension and displayed.
   job description, title, and company are read.
 
 ## Passive by design
-AI Jobby only **reads** the job posting you are actively viewing. It does **not**
+RoleReveal only **reads** the job posting you are actively viewing. It does **not**
 click, submit, auto-apply, navigate, automate, or send any network request to the
 job site itself. The only outbound request is the scoring call to the backend /
 LLM provider described above. This is deliberate — it keeps the extension clear of
@@ -66,7 +66,7 @@ Removing the extension deletes all locally stored data. You can also clear
 resumes, settings, and tracker entries from the Options page at any time.
 
 ## Not professional advice
-AI Jobby produces automated estimates to help you triage postings. Scores,
+RoleReveal produces automated estimates to help you triage postings. Scores,
 verdicts, and any sponsorship / work-authorization / eligibility signals are
 **informational only** and may be wrong. They are **not** legal, immigration,
 financial, or career advice. Always verify details directly with the employer.
@@ -77,12 +77,12 @@ United States or other countries. By using the default backend you consent to
 this transfer. To avoid it, configure your own provider/key in Options.
 
 ## Children
-AI Jobby is intended for job seekers and is not directed to children under 16.
+RoleReveal is intended for job seekers and is not directed to children under 16.
 We do not knowingly collect data from children.
 
 ## Your choices
 - Toggle PII masking in Options (on by default).
-- Use your own provider + API key to bypass the AI Jobby backend entirely.
+- Use your own provider + API key to bypass the RoleReveal backend entirely.
 - Clear resumes/settings/tracker from Options, or uninstall to delete all local data.
 
 ## Changes

@@ -1,7 +1,7 @@
 {
   "name": "ai-jobby",
   "version": "1.0.0",
-  "description": "AI Jobby — score how well your resume matches any job posting, get an apply/maybe/skip verdict, tailor a resume, and track applications. All local, your own LLM key.",
+  "description": "See how well your resume matches any job posting — AI job-fit match score, Apply/Maybe/Skip verdict, and the skills you're missing.",
   "type": "module",
   "scripts": {
     "dev": "vite",

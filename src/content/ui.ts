@@ -113,7 +113,7 @@ export function renderCardPanel(
 export function renderDetailsSkeleton(app: HTMLElement, summary: JobSummary | null): void {
   app.innerHTML = `
     <div class="aj">
-      <div class="brand"><img class="mk" src="${LOGO_URL}" alt=""> AI Jobby · Match</div>
+      <div class="brand"><img class="mk" src="${LOGO_URL}" alt=""> RoleReveal</div>
       <div class="head">
         <div class="badge skel" style="background:#26262b"></div>
         <div style="flex:1">
@@ -190,7 +190,7 @@ export function renderDetailsResult(
 
   app.innerHTML = `
     <div class="aj">
-      <div class="brand"><img class="mk" src="${LOGO_URL}" alt=""> AI Jobby · Match</div>
+      <div class="brand"><img class="mk" src="${LOGO_URL}" alt=""> RoleReveal</div>
       <div class="head">
         <div class="badge" style="background:${color}">${result.overallScore}</div>
         <div style="flex:1">

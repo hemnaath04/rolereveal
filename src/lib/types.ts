@@ -1,5 +1,5 @@
 // ---------------------------------------------------------------------------
-// Shared types for AI Jobby. Used by background, content, popup, and options.
+// Shared types for RoleReveal. Used by background, content, popup, and options.
 // ---------------------------------------------------------------------------
 import { DEFAULT_BACKEND } from './config';
 

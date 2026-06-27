@@ -1,7 +1,7 @@
 # Chrome Web Store — Listing Copy & Submission Notes
 
 ## Name
-AI Jobby — Resume Match Score for Job Postings
+RoleReveal — AI Job Fit & Resume Match Score
 
 ## Short description (≤132 chars)
 Instantly score any job posting against your resume — match %, Apply/Maybe/Skip verdict, and the skills you're missing.
@@ -10,7 +10,7 @@ Instantly score any job posting against your resume — match %, Apply/Maybe/Ski
 Productivity
 
 ## Detailed description
-AI Jobby reads the job posting you're viewing and scores how well it matches your
+RoleReveal reads the job posting you're viewing and scores how well it matches your
 resume — right inside the page, as you browse.
 
 • Live match score + Apply / Maybe / Skip verdict on every posting
@@ -21,7 +21,7 @@ resume — right inside the page, as you browse.
   Lever, and virtually any career site or job board
 • Application tracker built in
 
-How it works: add your resume once. Open any job posting and AI Jobby shows a
+How it works: add your resume once. Open any job posting and RoleReveal shows a
 match panel inline. Use the built-in backend (no setup) or bring your own LLM
 provider/API key in Options.
 

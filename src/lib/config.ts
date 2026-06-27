@@ -4,7 +4,7 @@ import type { Provider } from './types';
  * Default backend shipped with the public build so a new user can score jobs
  * immediately with no setup. Anything the user enters in Options overrides this.
  *
- * This points at the AI Jobby backend proxy (see ../../../ai-jobby-backend),
+ * This points at the RoleReveal backend proxy (see ../../../ai-jobby-backend),
  * which holds the real LLM key SERVER-SIDE. The extension therefore ships with
  * NO provider key — only the public proxy URL (and optionally a revocable app
  * token). Never put a raw Anthropic/OpenAI key here.

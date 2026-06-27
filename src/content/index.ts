@@ -51,7 +51,7 @@ function process() {
     processSelectedJobDetails(adapter);
   } catch (err) {
     // Never break the host page.
-    console.error('[AI Jobby] process failed', err);
+    console.error('[RoleReveal] process failed', err);
   }
 }
 
