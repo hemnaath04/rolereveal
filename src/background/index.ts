@@ -1,0 +1,146 @@
+// ---------------------------------------------------------------------------
+// Background service worker. The ONLY place that holds the API key and makes LLM
+// network calls. Content script / popup talk to it via chrome.runtime messages.
+// ---------------------------------------------------------------------------
+import { chatComplete, extractJson } from '../lib/llm';
+import {
+  buildEvalUserPrompt,
+  EVAL_SYSTEM_PROMPT,
+  buildTailorUserPrompt,
+  TAILOR_SYSTEM_PROMPT,
+} from '../lib/prompts';
+import { normalizeResult } from '../lib/scoring';
+import {
+  getEnabledResumes,
+  getResumes,
+  getSettings,
+  readCache,
+  writeCache,
+} from '../lib/storage';
+import { evalCacheKey } from '../lib/hash';
+import { addApplication } from '../lib/tracker';
+import type {
+  EvaluateResponse,
+  Message,
+  TailorResponse,
+} from '../lib/types';
+
+// Fingerprint of the resumes in play so editing a resume invalidates the cache.
+function resumeFingerprint(
+  resumes: { id: string; updatedAt: number }[],
+): string {
+  return resumes
+    .map((r) => `${r.id}:${r.updatedAt}`)
+    .sort()
+    .join('|');
+}
+
+async function handleEvaluate(
+  msg: Extract<Message, { type: 'EVALUATE' }>,
+): Promise<EvaluateResponse> {
+  const settings = await getSettings();
+  const resumes = await getEnabledResumes();
+  if (resumes.length === 0) {
+    return { ok: false, error: 'No enabled resumes. Add one in AI Jobby options.' };
+  }
+  if (msg.job.jdText.trim().length < 80) {
+    return {
+      ok: false,
+      error: 'Job description looks too short. Use "Select text" or "Paste JD".',
+    };
+  }
+
+  const key = evalCacheKey(msg.job.jdText, resumeFingerprint(resumes));
+  if (!msg.force) {
+    const cached = await readCache(key);
+    if (cached) return { ok: true, result: cached.result, cached: true };
+  }
+
+  try {
+    const raw = await chatComplete(settings, {
+      system: EVAL_SYSTEM_PROMPT,
+      user: buildEvalUserPrompt(msg.job.jdText, resumes),
+      temperature: 0.2,
+      maxTokens: 900,
+      jsonMode: true,
+    });
+    const parsed = extractJson<any>(raw);
+    const result = normalizeResult(parsed, settings);
+    await writeCache({ hash: key, result, createdAt: Date.now() });
+    return { ok: true, result, cached: false };
+  } catch (e: any) {
+    return { ok: false, error: e?.message ?? String(e) };
+  }
+}
+
+async function handleTailor(
+  msg: Extract<Message, { type: 'TAILOR' }>,
+): Promise<TailorResponse> {
+  const settings = await getSettings();
+  const resumes = await getResumes();
+  const resume =
+    resumes.find((r) => r.label === msg.resumeLabel) ??
+    (await getEnabledResumes())[0];
+  if (!resume) return { ok: false, error: 'Resume not found.' };
+
+  try {
+    const text = await chatComplete(settings, {
+      system: TAILOR_SYSTEM_PROMPT,
+      user: buildTailorUserPrompt(msg.job.jdText, resume.text),
+      temperature: 0.3,
+      maxTokens: 2200,
+    });
+    return { ok: true, text: text.trim() };
+  } catch (e: any) {
+    return { ok: false, error: e?.message ?? String(e) };
+  }
+}
+
+// Central message router. Returning true keeps the sendResponse channel open
+// for the async work above.
+chrome.runtime.onMessage.addListener((msg: Message, _sender, sendResponse) => {
+  (async () => {
+    switch (msg.type) {
+      case 'PING':
+        sendResponse({ ok: true });
+        break;
+      case 'GET_SETTINGS':
+        sendResponse(await getSettings());
+        break;
+      case 'GET_RESUMES':
+        sendResponse(await getResumes());
+        break;
+      case 'EVALUATE':
+        sendResponse(await handleEvaluate(msg));
+        break;
+      case 'TAILOR':
+        sendResponse(await handleTailor(msg));
+        break;
+      case 'TRACK_APPLY':
+        sendResponse({ ok: true, tracker: await addApplication(msg.app) });
+        break;
+      default:
+        sendResponse({ ok: false, error: 'Unknown message' });
+    }
+  })();
+  return true; // async response
+});
+
+// Right-click → "AI Jobby: evaluate selected text as JD" fallback for sites
+// where auto-detection fails.
+chrome.runtime.onInstalled.addListener(() => {
+  chrome.contextMenus.create({
+    id: 'ai-jobby-eval-selection',
+    title: 'AI Jobby: evaluate selected text as JD',
+    contexts: ['selection'],
+  });
+});
+
+chrome.contextMenus.onClicked.addListener((info, tab) => {
+  if (info.menuItemId === 'ai-jobby-eval-selection' && tab?.id && info.selectionText) {
+    chrome.tabs.sendMessage(tab.id, {
+      type: 'EVAL_SELECTION',
+      text: info.selectionText,
+    });
+  }
+});
