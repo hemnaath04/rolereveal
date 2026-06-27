@@ -27,6 +27,17 @@ async function set<K extends keyof StorageShape>(
   await chrome.storage.local.set({ [key]: value });
 }
 
+// --- Client id --------------------------------------------------------------
+// Stable per-install id sent to the backend so it can enforce a per-user daily
+// quota without accounts. Not personal data — a random UUID generated locally.
+export async function getClientId(): Promise<string> {
+  const { clientId } = await chrome.storage.local.get('clientId');
+  if (typeof clientId === 'string' && clientId) return clientId;
+  const id = crypto.randomUUID();
+  await chrome.storage.local.set({ clientId: id });
+  return id;
+}
+
 // --- Settings ---------------------------------------------------------------
 export async function getSettings(): Promise<Settings> {
   const s = await get('settings', DEFAULT_SETTINGS);

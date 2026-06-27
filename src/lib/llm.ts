@@ -15,6 +15,8 @@ export interface ChatArgs {
   maxTokens: number;
   /** Ask OpenAI-style providers for a JSON object response. */
   jsonMode?: boolean;
+  /** Per-install id, sent to the custom backend for per-user rate limiting. */
+  clientId?: string;
 }
 
 class LlmError extends Error {}
@@ -69,6 +71,10 @@ async function callOpenAiCompatible(
   if (settings.apiKey.trim()) {
     headers['authorization'] = `Bearer ${settings.apiKey}`;
   }
+  // Let the backend enforce a per-user daily quota without accounts.
+  if (settings.provider === 'custom' && args.clientId) {
+    headers['x-client-id'] = args.clientId;
+  }
   const body: Record<string, unknown> = {
     model: settings.model,
     temperature: args.temperature,
@@ -86,9 +92,16 @@ async function callOpenAiCompatible(
     body: JSON.stringify(body),
   });
   if (!res.ok) {
-    throw new LlmError(
-      `${settings.provider} ${res.status}: ${await safeText(res)}`,
-    );
+    const body = await safeText(res);
+    // Surface a clean message (e.g. the daily-limit text) when present.
+    let msg = body;
+    try {
+      const j = JSON.parse(body);
+      msg = j?.message || j?.error?.message || j?.error || body;
+    } catch {
+      /* keep raw */
+    }
+    throw new LlmError(`${msg} (${res.status})`);
   }
   const data = await res.json();
   const text: string = data?.choices?.[0]?.message?.content ?? '';

@@ -11,6 +11,7 @@ import {
 } from '../lib/prompts';
 import { normalizeResult } from '../lib/scoring';
 import {
+  getClientId,
   getEnabledResumes,
   getResumes,
   getSettings,
@@ -63,6 +64,7 @@ async function handleEvaluate(
       temperature: 0.2,
       maxTokens: 900,
       jsonMode: true,
+      clientId: await getClientId(),
     });
     const parsed = extractJson<any>(raw);
     const result = normalizeResult(parsed, settings);
