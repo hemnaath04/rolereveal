@@ -147,6 +147,12 @@ export function renderDetailsResult(
   handlers: DetailsHandlers,
 ): void {
   const fit = FIT[result.verdict];
+  // Guard against older cached results that predate the dimensions field.
+  const dims = result.dimensions ?? {
+    skills: result.overallScore,
+    experience: result.overallScore,
+    roleContext: result.overallScore,
+  };
   const titleLine = [job.title, job.company].filter(Boolean).join(' · ') || 'This role';
   const bar = (label: string, val: number) =>
     `<div class="bar-row"><span>${label}</span><div class="bar"><i data-w="${val}"></i></div><b>${val}%</b></div>`;
@@ -179,9 +185,9 @@ export function renderDetailsResult(
       </div>
 
       <div class="bars">
-        ${bar('Skills', result.dimensions.skills)}
-        ${bar('Experience', result.dimensions.experience)}
-        ${bar('Role context', result.dimensions.roleContext)}
+        ${bar('Skills', dims.skills)}
+        ${bar('Experience', dims.experience)}
+        ${bar('Role context', dims.roleContext)}
       </div>
 
       <div class="notes">
