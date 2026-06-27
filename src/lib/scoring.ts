@@ -10,9 +10,6 @@ const clamp = (n: unknown): number => {
   return Math.max(0, Math.min(100, Math.round(x)));
 };
 
-const asStrArray = (v: unknown): string[] =>
-  Array.isArray(v) ? v.filter((x) => typeof x === 'string' && x.trim()).map((x) => x.trim()) : [];
-
 export function deriveVerdict(score: number, t: Settings['thresholds']): Verdict {
   if (score >= t.apply) return 'Apply';
   if (score >= t.maybe) return 'Maybe';
@@ -49,16 +46,12 @@ export function normalizeResult(raw: any, settings: Settings): EvalResult {
   const bestResume =
     best?.label ?? (typeof raw?.bestResume === 'string' ? raw.bestResume : '—');
 
-  const quals = (v: any): { name: string; have: boolean }[] =>
-    Array.isArray(v)
-      ? v
-          .map((q: any) => ({
-            name: typeof q?.name === 'string' ? q.name : String(q ?? ''),
-            have: !!q?.have,
-          }))
-          .filter((q) => q.name)
-          .slice(0, 12)
-      : [];
+  const d = raw?.dimensions ?? {};
+  // Fall back to the overall score if a sub-score is missing.
+  const dim = (v: unknown) =>
+    v === undefined || v === null || v === '' ? overallScore : clamp(v);
+  const str = (v: unknown, max: number) =>
+    typeof v === 'string' ? clampWords(v, max) : '';
 
   return {
     perResume,
@@ -67,10 +60,13 @@ export function normalizeResult(raw: any, settings: Settings): EvalResult {
     // Re-derive so it always matches the user's thresholds.
     verdict: deriveVerdict(overallScore, settings.thresholds),
     summary: clampWords(typeof raw?.summary === 'string' ? raw.summary : '', 20),
-    requiredQualifications: quals(raw?.requiredQualifications),
-    optionalQualifications: quals(raw?.optionalQualifications),
-    matchedSkills: asStrArray(raw?.matchedSkills).slice(0, 20),
-    missingSkills: asStrArray(raw?.missingSkills).slice(0, 20),
+    dimensions: {
+      skills: dim(d.skills),
+      experience: dim(d.experience),
+      roleContext: dim(d.roleContext),
+    },
+    whyMatch: str(raw?.whyMatch, 16),
+    watchOuts: str(raw?.watchOuts, 18),
   };
 }
 

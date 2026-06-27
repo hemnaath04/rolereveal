@@ -61,15 +61,16 @@ export interface PerResumeScore {
 
 export type Verdict = 'Apply' | 'Maybe' | 'Skip';
 
-/** A single qualification with whether the candidate appears to meet it. */
-export interface Qual {
-  name: string;
-  have: boolean;
+/** Per-dimension sub-scores (0–100) shown as bars in the panel. */
+export interface ScoreDimensions {
+  skills: number;
+  experience: number;
+  roleContext: number;
 }
 
 /**
  * Evaluation contract. The card strip uses only `overallScore`/`verdict`; the
- * details panel uses the full breakdown.
+ * details panel renders the donut, dimension bars, and why/watch-outs.
  */
 export interface EvalResult {
   perResume: PerResumeScore[];
@@ -78,10 +79,11 @@ export interface EvalResult {
   verdict: Verdict;
   /** One sentence, max 20 words, explaining the verdict. */
   summary: string;
-  requiredQualifications: Qual[];
-  optionalQualifications: Qual[];
-  matchedSkills: string[];
-  missingSkills: string[];
+  dimensions: ScoreDimensions;
+  /** Short phrase: the genuine strengths for this role. */
+  whyMatch: string;
+  /** Short phrase: the main gaps / risks (incl. eligibility). */
+  watchOuts: string;
 }
 
 /** Lightweight per-card job identity extracted from a list card. */

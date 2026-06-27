@@ -137,11 +137,12 @@ function renderResult(
   app: HTMLElement,
   result: EvalResult,
 ): void {
-  const signals = deterministicSignals(adapter.extractFullJobDescription() || '');
-  let expanded = false; // collapsed by default — details behind "Show match details"
-
-  const draw = () =>
-    renderDetailsResult(app, result, signals, {
+  const summary = adapter.extractDetailsSummary();
+  renderDetailsResult(
+    app,
+    result,
+    { title: summary?.title || '', company: summary?.company || '' },
+    {
       onRerun: () => {
         detailsCache.delete(jobId);
         const host =
@@ -150,13 +151,8 @@ function renderResult(
             : null;
         if (host) void analyzeDetails(adapter, jobId, host, app, true);
       },
-      onToggle: () => {
-        expanded = !expanded;
-        draw();
-      },
       onQuickApply: () => adapter.clickApply?.(),
       onMarkApplied: () => {
-        const summary = adapter.extractDetailsSummary();
         void send({
           type: 'TRACK_APPLY',
           app: {
@@ -169,9 +165,8 @@ function renderResult(
         });
         app.querySelector('#aj-track')?.replaceChildren(document.createTextNode('Tracked ✓'));
       },
-    }, expanded);
-
-  draw();
+    },
+  );
 }
 
 export function resetDetailsState(): void {
