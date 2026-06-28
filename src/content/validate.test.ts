@@ -102,11 +102,17 @@ describe('validatePage', () => {
     if (!r.ok) expect(r.reason).toBe('missing-fields');
   });
 
-  it('rejects when company < 2 (missing-fields)', () => {
+  it('rejects when company < 2 on the generic adapter (missing-fields)', () => {
     jsonLd();
-    const r = validatePage(makeAdapter(), { ...goodJob(), company: '' });
+    // Company is required only for the generic (non-dedicated) adapter.
+    const r = validatePage(makeAdapter({ dedicated: false }), { ...goodJob(), company: '' });
     expect(r.ok).toBe(false);
     if (!r.ok) expect(r.reason).toBe('missing-fields');
+  });
+
+  it('allows a dedicated adapter even when company is missing', () => {
+    const r = validatePage(makeAdapter({ dedicated: true }), { ...goodJob(), company: '' });
+    expect(r.ok).toBe(true);
   });
 
   it('rejects when no key (missing-fields)', () => {

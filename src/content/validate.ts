@@ -60,12 +60,14 @@ export function detectSignals(
     signals.push('known-job-url');
   }
 
-  // A dedicated (non-generic) adapter pulled a complete job from real selectors.
+  // A dedicated (non-generic) adapter pulled a real job from site-specific
+  // selectors. Company is intentionally NOT required here — many real boards
+  // (Indeed, Greenhouse, …) render the company in a logo/header that varies, and
+  // a canonical key + title + a substantial description is already strong proof.
   if (
     adapter.dedicated &&
     extracted.title.length > 0 &&
-    extracted.company.length > 0 &&
-    extracted.description.length > 0
+    extracted.description.length >= PAGE_VALIDATION.minimumDescriptionLength
   ) {
     signals.push('known-ats-selector');
   }
@@ -183,9 +185,14 @@ export function validatePage(
   if (PAGE_VALIDATION.requireCanonicalJobKey && !extracted.key) {
     return { ok: false, reason: 'missing-fields' };
   }
+  // Company length is required only for the generic (non-dedicated) adapter.
+  // Dedicated site adapters only fire on a real job-detail page, so we don't let
+  // a missing/odd company field (common DOM variance) block a real posting.
+  const companyOk =
+    adapter.dedicated || extracted.company.length >= PAGE_VALIDATION.minimumCompanyLength;
   if (
     extracted.title.length < PAGE_VALIDATION.minimumTitleLength ||
-    extracted.company.length < PAGE_VALIDATION.minimumCompanyLength ||
+    !companyOk ||
     extracted.description.length < PAGE_VALIDATION.minimumDescriptionLength
   ) {
     return { ok: false, reason: 'missing-fields' };
