@@ -46,10 +46,10 @@ export default defineManifest({
   version: pkg.version,
   description: pkg.description,
   permissions: ['storage', 'activeTab', 'contextMenus', 'scripting'],
+  // Scoped to the LLM provider endpoints only (built-in proxy + supported
+  // providers + localhost for Ollama). No broad host access — this keeps the
+  // extension off the Web Store's "in-depth review" path.
   host_permissions: PROVIDER_HOSTS,
-  // For user-supplied custom / self-hosted LLM endpoints — requested at runtime
-  // in Options, never at install, so it doesn't widen the review scope.
-  optional_host_permissions: ['https://*/*', 'http://*/*'],
   action: {
     default_popup: 'src/popup/index.html',
     default_title: 'RoleReveal',

@@ -141,7 +141,11 @@ export function Options() {
                       value={settings.customBaseUrl}
                       onChange={(e) => patchSettings({ customBaseUrl: e.target.value })}
                     />
-                    <BaseUrlAccess url={settings.customBaseUrl} />
+                    <span className="muted small">
+                      Supported out of the box: the listed providers and a local model at
+                      localhost. A remote custom endpoint on another domain isn’t reachable in
+                      the published build.
+                    </span>
                   </label>
                 )}
 
@@ -242,43 +246,6 @@ export function Options() {
 }
 
 const clampNum = (v: string) => Math.max(0, Math.min(100, Number(v) || 0));
-
-function originPattern(url: string): string | null {
-  try {
-    return new URL(url).origin + '/*';
-  } catch {
-    return null;
-  }
-}
-
-// Custom / self-hosted endpoints aren't in the manifest's host_permissions, so
-// the background worker needs runtime permission to fetch them. This requests it
-// on a click (required for chrome.permissions.request).
-function BaseUrlAccess({ url }: { url: string }) {
-  const pattern = originPattern(url);
-  const [granted, setGranted] = useState<boolean | null>(null);
-
-  useEffect(() => {
-    if (!pattern) { setGranted(null); return; }
-    void chrome.permissions.contains({ origins: [pattern] }).then(setGranted);
-  }, [pattern]);
-
-  if (!pattern) return null;
-  if (granted) return <span className="muted small">✓ Access authorized</span>;
-  return (
-    <button
-      type="button"
-      className="btn ghost small"
-      style={{ marginTop: 6, alignSelf: 'flex-start' }}
-      onClick={async () => {
-        const ok = await chrome.permissions.request({ origins: [pattern] });
-        setGranted(ok);
-      }}
-    >
-      Allow access to this URL
-    </button>
-  );
-}
 
 function ResumeAdder({
   onAdd,
