@@ -86,13 +86,11 @@ const DETAILS_CSS = BASE_CSS + `
   .load-note { font-size:11.5px; margin-top:14px; line-height:1.5; }
 `;
 
+// Per-card hosts (LinkedIn list strips) — there are many of these, one per card.
 export function createShadowHost(jobId: string, kind: 'card' | 'details'): HTMLElement {
   const host = document.createElement('div');
   host.setAttribute(ROOT_ATTR, kind);
   host.dataset.jobId = jobId;
-  // Stable unique id for the single details panel root, so it's easy to find
-  // and there's never more than one on the page.
-  if (kind === 'details') host.id = 'role-reveal-extension-root';
   const shadow = host.attachShadow({ mode: 'open' });
   const style = document.createElement('style');
   style.textContent = kind === 'card' ? CARD_CSS : DETAILS_CSS;
@@ -101,6 +99,47 @@ export function createShadowHost(jobId: string, kind: 'card' | 'details'): HTMLE
   app.id = 'app';
   shadow.appendChild(app);
   return host;
+}
+
+// The ONE details-panel root id for the whole tab.
+export const DETAILS_ROOT_ID = 'role-reveal-extension-root';
+
+/**
+ * Atomically get the single details root. If it already exists — from a
+ * re-injection race, an SPA tick, or even a second content-script instance (the
+ * DOM is shared between isolated worlds) — reuse it; never create a second. Any
+ * accidental extras are removed so the page always has zero or one root. This is
+ * the fix for the duplicate-panel bug: the dedupe is global-by-id, not scoped to
+ * a subtree the host might be inserted outside of.
+ */
+export function getOrCreateDetailsHost(): HTMLElement {
+  const all = document.querySelectorAll<HTMLElement>(`#${DETAILS_ROOT_ID}`);
+  if (all.length) {
+    for (let i = 1; i < all.length; i++) all[i].remove(); // keep only the first
+    return all[0];
+  }
+  const host = document.createElement('div');
+  host.id = DETAILS_ROOT_ID;
+  host.setAttribute(ROOT_ATTR, 'details');
+  host.dataset.owner = chrome.runtime.id;
+  const shadow = host.attachShadow({ mode: 'open' });
+  const style = document.createElement('style');
+  style.textContent = DETAILS_CSS;
+  shadow.appendChild(style);
+  const app = document.createElement('div');
+  app.id = 'app';
+  shadow.appendChild(app);
+  return host;
+}
+
+/** The current single details root, if mounted. */
+export function detailsHost(): HTMLElement | null {
+  return document.getElementById(DETAILS_ROOT_ID);
+}
+
+/** Remove the details root (and any stray extras). Used on dismiss / leaving a job. */
+export function removeDetailsHost(): void {
+  document.querySelectorAll(`#${DETAILS_ROOT_ID}`).forEach((el) => el.remove());
 }
 
 export function appOf(host: HTMLElement): HTMLElement {

@@ -11,6 +11,9 @@ import {
   ROOT_ATTR,
   appOf,
   createShadowHost,
+  detailsHost,
+  getOrCreateDetailsHost,
+  removeDetailsHost,
   renderCardPanel,
   renderDetailsError,
   renderDetailsResult,
@@ -73,20 +76,27 @@ export function processVisibleJobCards(adapter: JobSiteAdapter): void {
 }
 
 // ── Selected job details ─────────────────────────────────────────────────────
+// One panel per tab, period. The single root is found GLOBALLY by id (not within
+// a subtree the host might be inserted outside of) and reused across observer
+// ticks, SPA navigations, and even a second content-script instance. We only
+// touch the DOM when the selected job actually changes.
 export function processSelectedJobDetails(adapter: JobSiteAdapter): void {
   const panel = adapter.findDetailsPanel();
-  if (!panel) return;
-  const jobId = adapter.findDetailsJobId();
-  if (!jobId) return;
-  const insertion = adapter.findDetailsInsertionPoint(panel);
-  if (!insertion || !insertion.parentElement) return;
+  const jobId = panel ? adapter.findDetailsJobId() : null;
+
+  // Page is not (or no longer) a recognised job posting → remove any stale panel.
+  if (!panel || !jobId) {
+    removeDetailsHost();
+    resetDetailsState();
+    return;
+  }
 
   const key = normalizeUrl(location.href);
 
-  // Dismissal guards — run BEFORE injecting so the observer can't re-add a
+  // Dismissal guards — run before any injection so the observer can't re-add a
   // panel the user closed for this job url.
   if (dismissed.has(key)) {
-    panel.querySelector(`[${ROOT_ATTR}="details"]`)?.remove();
+    removeDetailsHost();
     return;
   }
   if (!checked.has(key)) {
@@ -104,11 +114,16 @@ export function processSelectedJobDetails(adapter: JobSiteAdapter): void {
     return;
   }
 
-  const existing = panel.querySelector<HTMLElement>(`[${ROOT_ATTR}="details"]`);
-  if (existing && existing.dataset.jobId === jobId && existing.isConnected) return;
-  existing?.remove();
+  // Already showing this exact job → do nothing (no re-inject, no re-analyze).
+  const current = detailsHost();
+  if (current && current.dataset.jobId === jobId) return;
 
-  const host = createShadowHost(jobId, 'details');
+  const insertion = adapter.findDetailsInsertionPoint(panel);
+  if (!insertion || !insertion.parentElement) return;
+
+  // Reuse the single global root and (re)position it just below the apply area.
+  const host = getOrCreateDetailsHost();
+  host.dataset.jobId = jobId;
   insertion.parentElement.insertBefore(host, insertion);
   const app = appOf(host);
 
@@ -212,20 +227,19 @@ function renderResult(
         });
         app.querySelector('#aj-track')?.replaceChildren(document.createTextNode('Tracked ✓'));
       },
-      onDismiss: () => dismissCurrent(app),
+      onDismiss: () => dismissCurrent(),
     },
   );
 }
 
 // Mark the current job url dismissed (in-memory + background session) and remove
 // the panel host. The × button calls this; the observer then won't re-inject.
-function dismissCurrent(app: HTMLElement): void {
+function dismissCurrent(): void {
   const key = normalizeUrl(location.href);
   dismissed.add(key);
   checked.add(key);
   void send({ type: 'DISMISS_PANEL', url: location.href });
-  const root = app.getRootNode();
-  if (root instanceof ShadowRoot) (root.host as HTMLElement).remove();
+  removeDetailsHost();
 }
 
 // Deliberate user re-open path (popup "Show panel on page"): forget the
