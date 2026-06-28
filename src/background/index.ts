@@ -21,11 +21,44 @@ import {
 } from '../lib/storage';
 import { evalCacheKey } from '../lib/hash';
 import { addApplication } from '../lib/tracker';
+import { normalizeUrl } from '../lib/url';
 import type {
   EvaluateResponse,
+  IsDismissedResponse,
   Message,
   TailorResponse,
 } from '../lib/types';
+
+// ── Per-tab dismissed-panel registry (chrome.storage.session) ────────────────
+// Content scripts can't read chrome.storage.session, so dismissal state lives
+// here and is queried over messages. Keyed `dismissed:<tabId>` → string[] of
+// normalizeUrl(url).
+const dismissKey = (tabId: number): string => `dismissed:${tabId}`;
+
+async function getDismissed(tabId: number): Promise<string[]> {
+  const key = dismissKey(tabId);
+  const store = await chrome.storage.session.get(key);
+  const value = store[key];
+  return Array.isArray(value) ? (value as string[]) : [];
+}
+
+async function addDismissed(tabId: number, url: string): Promise<void> {
+  const norm = normalizeUrl(url);
+  const list = await getDismissed(tabId);
+  if (!list.includes(norm)) list.push(norm);
+  await chrome.storage.session.set({ [dismissKey(tabId)]: list });
+}
+
+async function removeDismissed(tabId: number, url: string): Promise<void> {
+  const norm = normalizeUrl(url);
+  const list = (await getDismissed(tabId)).filter((u) => u !== norm);
+  await chrome.storage.session.set({ [dismissKey(tabId)]: list });
+}
+
+// Drop a tab's dismissal list when it closes so the session store doesn't grow.
+chrome.tabs.onRemoved.addListener((tabId) => {
+  void chrome.storage.session.remove(dismissKey(tabId));
+});
 
 // Fingerprint of the resumes in play so editing a resume invalidates the cache.
 function resumeFingerprint(
@@ -116,7 +149,7 @@ async function handleTailor(
 
 // Central message router. Returning true keeps the sendResponse channel open
 // for the async work above.
-chrome.runtime.onMessage.addListener((msg: Message, _sender, sendResponse) => {
+chrome.runtime.onMessage.addListener((msg: Message, sender, sendResponse) => {
   (async () => {
     switch (msg.type) {
       case 'PING':
@@ -137,6 +170,25 @@ chrome.runtime.onMessage.addListener((msg: Message, _sender, sendResponse) => {
       case 'TRACK_APPLY':
         sendResponse({ ok: true, tracker: await addApplication(msg.app) });
         break;
+      case 'DISMISS_PANEL': {
+        const tabId = sender.tab?.id;
+        if (tabId !== undefined) await addDismissed(tabId, msg.url);
+        sendResponse({ ok: true });
+        break;
+      }
+      case 'IS_DISMISSED': {
+        const tabId = sender.tab?.id;
+        const list = tabId !== undefined ? await getDismissed(tabId) : [];
+        const res: IsDismissedResponse = { dismissed: list.includes(normalizeUrl(msg.url)) };
+        sendResponse(res);
+        break;
+      }
+      case 'CLEAR_DISMISS': {
+        const tabId = sender.tab?.id;
+        if (tabId !== undefined) await removeDismissed(tabId, msg.url);
+        sendResponse({ ok: true });
+        break;
+      }
       default:
         sendResponse({ ok: false, error: 'Unknown message' });
     }

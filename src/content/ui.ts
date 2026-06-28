@@ -81,6 +81,9 @@ export function createShadowHost(jobId: string, kind: 'card' | 'details'): HTMLE
   const host = document.createElement('div');
   host.setAttribute(ROOT_ATTR, kind);
   host.dataset.jobId = jobId;
+  // Stable unique id for the single details panel root, so it's easy to find
+  // and there's never more than one on the page.
+  if (kind === 'details') host.id = 'role-reveal-extension-root';
   const shadow = host.attachShadow({ mode: 'open' });
   const style = document.createElement('style');
   style.textContent = kind === 'card' ? CARD_CSS : DETAILS_CSS;
@@ -132,6 +135,7 @@ export interface DetailsHandlers {
   onRerun: () => void;
   onQuickApply: () => void;
   onMarkApplied: () => void;
+  onDismiss: () => void;
 }
 
 const FIT = {
@@ -214,10 +218,9 @@ export function renderDetailsResult(
   app.querySelector('#aj-rerun')?.addEventListener('click', handlers.onRerun);
   app.querySelector('#aj-apply')?.addEventListener('click', handlers.onQuickApply);
   app.querySelector('#aj-track')?.addEventListener('click', handlers.onMarkApplied);
-  app.querySelector('#aj-x')?.addEventListener('click', () => {
-    const root = app.getRootNode();
-    if (root instanceof ShadowRoot) (root.host as HTMLElement).remove();
-  });
+  // Dismissal removal + persistence is owned by injector's onDismiss, so the
+  // observer can't re-inject the panel the user just closed.
+  app.querySelector('#aj-x')?.addEventListener('click', handlers.onDismiss);
 }
 
 function countUp(el: Element | null, to: number): void {

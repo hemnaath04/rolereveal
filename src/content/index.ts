@@ -8,6 +8,7 @@ import { activeAdapter } from './adapters';
 import { createObserver } from './observer';
 import { onRouteChange } from './navigation';
 import {
+  clearDismissForCurrent,
   processSelectedJobDetails,
   processVisibleJobCards,
   resetDetailsState,
@@ -17,29 +18,56 @@ import { getEnabledResumes } from '../lib/storage';
 import { extractJob } from '../lib/jd-extract';
 import type { JobContext } from '../lib/types';
 
-// Popup "Evaluate current tab" still reads the JD from here.
-chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
-  if (msg?.type === 'GET_JOB') {
-    const adapter = activeAdapter();
-    const jd = adapter?.extractFullJobDescription();
-    if (adapter && jd) {
-      const s = adapter.extractDetailsSummary();
-      const job: JobContext = {
-        url: s?.url || location.href,
-        title: s?.title || '',
-        company: s?.company || '',
-        jdText: jd,
-        detection: 'clean',
-        site: adapter.site,
-      };
-      sendResponse(job);
-    } else {
-      sendResponse(extractJob());
-    }
-    return true;
+// Single-init guard: crxjs / SPA re-injection can run this module more than once.
+// Bail on the second run so we never create duplicate listeners, observers,
+// route-change timers, or panel roots.
+declare global {
+  interface Window {
+    __roleRevealInit?: boolean;
   }
-  return undefined;
-});
+}
+if (window.__roleRevealInit) {
+  // Already initialised in this frame — do nothing.
+} else {
+  window.__roleRevealInit = true;
+  init();
+}
+
+function init(): void {
+  // Popup "Evaluate current tab" reads the JD from here; OPEN_PANEL re-opens a
+  // dismissed panel.
+  chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
+    if (msg?.type === 'GET_JOB') {
+      const adapter = activeAdapter();
+      const jd = adapter?.extractFullJobDescription();
+      if (adapter && jd) {
+        const s = adapter.extractDetailsSummary();
+        const job: JobContext = {
+          url: s?.url || location.href,
+          title: s?.title || '',
+          company: s?.company || '',
+          jdText: jd,
+          detection: 'clean',
+          site: adapter.site,
+        };
+        sendResponse(job);
+      } else {
+        sendResponse(extractJob());
+      }
+      return true;
+    }
+    if (msg?.type === 'OPEN_PANEL') {
+      // Deliberate user re-open: forget the dismissal and re-inject.
+      clearDismissForCurrent();
+      process();
+      sendResponse({ ok: true });
+      return true;
+    }
+    return undefined;
+  });
+
+  void main();
+}
 
 function process() {
   try {
@@ -78,5 +106,3 @@ async function main() {
   window.setTimeout(process, 800);
   window.setTimeout(process, 2000);
 }
-
-void main();

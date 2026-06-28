@@ -141,11 +141,18 @@ export type Message =
   | { type: 'GET_SETTINGS' }
   | { type: 'GET_RESUMES' }
   | { type: 'TRACK_APPLY'; app: Omit<TrackedApplication, 'id' | 'date' | 'status'> }
+  | { type: 'DISMISS_PANEL'; url: string }
+  | { type: 'IS_DISMISSED'; url: string }
+  | { type: 'CLEAR_DISMISS'; url: string }
+  | { type: 'OPEN_PANEL' }
   | { type: 'PING' };
 
 export type EvaluateResponse =
   | { ok: true; result: EvalResult; cached: boolean }
   | { ok: false; error: string };
+
+/** Response to IS_DISMISSED: whether the panel was dismissed for this url+tab. */
+export type IsDismissedResponse = { dismissed: boolean };
 
 export type TailorResponse =
   | { ok: true; text: string }

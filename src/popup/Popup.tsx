@@ -76,6 +76,11 @@ function ScoreTab({ settings }: { settings: Settings | null }) {
     });
   };
 
+  const showPanelOnPage = async () => {
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    if (tab?.id) void chrome.tabs.sendMessage(tab.id, { type: 'OPEN_PANEL' }).catch(() => null);
+  };
+
   const keyMissing = settings && settings.provider !== 'custom' && !settings.apiKey;
   const color = result ? colorForScore(result.overallScore, settings?.thresholds ?? { apply: 75, maybe: 55 }) : '#374151';
 
@@ -89,6 +94,10 @@ function ScoreTab({ settings }: { settings: Settings | null }) {
 
       <button className="btn primary" style={{ width: '100%' }} onClick={run} disabled={status === 'loading'}>
         {status === 'loading' ? 'Scoring…' : 'Evaluate current tab'}
+      </button>
+
+      <button className="btn ghost small space" style={{ width: '100%' }} onClick={showPanelOnPage}>
+        Show panel on page
       </button>
 
       {status === 'error' && <div className="err space">{error}</div>}

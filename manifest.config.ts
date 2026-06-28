@@ -32,6 +32,12 @@ export default defineManifest({
   action: {
     default_popup: 'src/popup/index.html',
     default_title: 'RoleReveal',
+    default_icon: {
+      '16': 'icons/icon16.png',
+      '32': 'icons/icon32.png',
+      '48': 'icons/icon48.png',
+      '128': 'icons/icon128.png',
+    },
   },
   options_page: 'src/options/index.html',
   background: {
@@ -54,6 +60,7 @@ export default defineManifest({
   ],
   icons: {
     '16': 'icons/icon16.png',
+    '32': 'icons/icon32.png',
     '48': 'icons/icon48.png',
     '128': 'icons/icon128.png',
   },
