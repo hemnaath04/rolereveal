@@ -14,6 +14,25 @@ import { downloadCsv, removeApplication, updateStatus } from '../lib/tracker';
 const send = <T,>(msg: unknown): Promise<T> =>
   chrome.runtime.sendMessage(msg) as Promise<T>;
 
+// On non-job sites the content script isn't auto-injected, so the popup injects
+// it on demand (activeTab grants host access for the active tab on this click).
+// No-op if it's already present (major job sites).
+async function ensureContentScript(tabId: number): Promise<void> {
+  const present = await chrome.tabs
+    .sendMessage(tabId, { type: 'PING_CONTENT' })
+    .then(() => true)
+    .catch(() => false);
+  if (present) return;
+  const files = chrome.runtime.getManifest().content_scripts?.[0]?.js ?? [];
+  if (!files.length) return;
+  try {
+    await chrome.scripting.executeScript({ target: { tabId }, files });
+    await new Promise((r) => setTimeout(r, 300)); // let it register its listener
+  } catch {
+    /* restricted page (chrome://, web store, etc.) — nothing we can do */
+  }
+}
+
 type Tab = 'score' | 'tracker';
 
 export function Popup() {
@@ -57,8 +76,11 @@ function ScoreTab({ settings }: { settings: Settings | null }) {
     try {
       const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
       if (!tab?.id) throw new Error('No active tab.');
+      // RoleReveal only auto-runs on major job sites; on any other page we inject
+      // the content script on demand here (activeTab + scripting, on the click).
+      await ensureContentScript(tab.id);
       const j = await chrome.tabs.sendMessage(tab.id, { type: 'GET_JOB' }).catch(() => null);
-      if (!j) throw new Error('Open a job posting and reload the page, then try again.');
+      if (!j) throw new Error("Couldn't read this page. Open a job posting and try again.");
       setJob(j);
       const res = await send<EvaluateResponse>({ type: 'EVALUATE', job: j, force: false });
       if (res.ok) { setResult(res.result); setStatus('done'); }
@@ -79,7 +101,9 @@ function ScoreTab({ settings }: { settings: Settings | null }) {
 
   const showPanelOnPage = async () => {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-    if (tab?.id) void chrome.tabs.sendMessage(tab.id, { type: 'OPEN_PANEL' }).catch(() => null);
+    if (!tab?.id) return;
+    await ensureContentScript(tab.id);
+    void chrome.tabs.sendMessage(tab.id, { type: 'OPEN_PANEL' }).catch(() => null);
   };
 
   const keyMissing = !!settings && getProvider(settings.provider).needsKey && !settings.apiKey;
@@ -121,7 +145,8 @@ function ScoreTab({ settings }: { settings: Settings | null }) {
 
       {status === 'idle' && (
         <p className="small muted space">
-          Open a job posting, then Evaluate. The on-page overlay auto-scores as you browse.
+          On major job sites the panel auto-scores as you browse. Anywhere else, open a
+          posting and hit “Evaluate current tab”.
         </p>
       )}
     </div>

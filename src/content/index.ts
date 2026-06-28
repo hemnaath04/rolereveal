@@ -37,6 +37,12 @@ function init(): void {
   // Popup "Evaluate current tab" reads the JD from here; OPEN_PANEL re-opens a
   // dismissed panel.
   chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
+    if (msg?.type === 'PING_CONTENT') {
+      // Lets the popup detect whether the content script is already present
+      // before injecting it on demand (activeTab + scripting).
+      sendResponse({ ok: true });
+      return true;
+    }
     if (msg?.type === 'GET_JOB') {
       const adapter = activeAdapter();
       const jd = adapter?.extractFullJobDescription();

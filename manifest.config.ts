@@ -1,34 +1,77 @@
 import { defineManifest } from '@crxjs/vite-plugin';
 import pkg from './package.json';
 
-// RoleReveal runs on every site so it can detect a job posting anywhere. It does
-// NOT score random pages: the content script only injects when an adapter
-// confirms a real job posting (site-specific selectors, or the generic
-// JSON-LD/heading/heuristic gate). That's why GitHub/Gmail stay untouched.
-const JOB_SITE_MATCHES = ['<all_urls>'];
+// RoleReveal auto-runs only on major job boards / ATS platforms. On every other
+// site it stays completely inert until the user clicks "Evaluate current tab"
+// in the popup, which injects on demand via activeTab + scripting. This keeps
+// the extension narrowly scoped (faster Web Store review, no broad host access)
+// and prevents false positives on non-job pages (courses, docs, dashboards).
+const JOB_SITE_MATCHES = [
+  '*://*.linkedin.com/*',
+  '*://*.indeed.com/*',
+  '*://*.glassdoor.com/*',
+  '*://*.ziprecruiter.com/*',
+  '*://*.monster.com/*',
+  '*://*.dice.com/*',
+  '*://*.simplyhired.com/*',
+  '*://*.wellfound.com/*',
+  '*://*.builtin.com/*',
+  '*://*.greenhouse.io/*',
+  '*://*.lever.co/*',
+  '*://*.myworkdayjobs.com/*',
+  '*://*.ashbyhq.com/*',
+  '*://*.smartrecruiters.com/*',
+  '*://*.icims.com/*',
+  '*://*.workable.com/*',
+  '*://*.breezy.hr/*',
+  '*://*.teamtailor.com/*',
+  '*://*.recruitee.com/*',
+  '*://*.jobvite.com/*',
+  '*://*.bamboohr.com/*',
+  '*://*.symplicity.com/*',
+];
+
+// The LLM endpoints the background service worker is allowed to call. Scoped to
+// the built-in proxy + each supported provider (and localhost for Ollama) so we
+// never need broad host access just to score a job. Custom/self-hosted base URLs
+// are covered by optional_host_permissions, requested at runtime in Options.
+const PROVIDER_HOSTS = [
+  'https://ai-jobby-backend.vercel.app/*',
+  'https://api.openai.com/*',
+  'https://api.anthropic.com/*',
+  'https://generativelanguage.googleapis.com/*',
+  'https://api.groq.com/*',
+  'https://openrouter.ai/*',
+  'https://api.deepseek.com/*',
+  'https://api.x.ai/*',
+  'https://api.mistral.ai/*',
+  'https://api.together.xyz/*',
+  'https://api.fireworks.ai/*',
+  'https://api.perplexity.ai/*',
+  'http://localhost/*',
+  'http://127.0.0.1/*',
+];
 
 /**
  * MV3 manifest for RoleReveal.
  *
- * Key choices:
- * - The background service worker (type: module) makes all LLM network calls.
- *   The API key therefore never enters page/content-script context.
- * - `host_permissions: <all_urls>` lets the *service worker* fetch the chosen
- *   LLM endpoint (Anthropic / OpenAI / custom) without CORS issues. Extension
- *   service workers with host permissions are not blocked by page CORS.
- * - The content script runs on all sites so the overlay can appear on any job
- *   board or generic careers page.
- * - pdf.js worker + overlay assets are exposed as web_accessible_resources.
+ * - The background service worker makes all LLM calls; the API key never enters
+ *   page/content-script context. host_permissions is limited to the provider
+ *   endpoints so those fetches aren't blocked by CORS.
+ * - Auto content-script injection is limited to JOB_SITE_MATCHES. For any other
+ *   site, the popup injects the content script on demand using activeTab +
+ *   scripting (a user gesture), so the user can still score any page.
  */
 export default defineManifest({
   manifest_version: 3,
-  // Keyword-rich store title (the name field is the top Web Store SEO lever);
-  // "RoleReveal" alone is the short brand used in the UI.
   name: 'RoleReveal — AI Job Fit & Resume Match Score',
   version: pkg.version,
   description: pkg.description,
-  permissions: ['storage', 'activeTab', 'contextMenus'],
-  host_permissions: ['<all_urls>'],
+  permissions: ['storage', 'activeTab', 'contextMenus', 'scripting'],
+  host_permissions: PROVIDER_HOSTS,
+  // For user-supplied custom / self-hosted LLM endpoints — requested at runtime
+  // in Options, never at install, so it doesn't widen the review scope.
+  optional_host_permissions: ['https://*/*', 'http://*/*'],
   action: {
     default_popup: 'src/popup/index.html',
     default_title: 'RoleReveal',
@@ -53,9 +96,10 @@ export default defineManifest({
   ],
   web_accessible_resources: [
     {
-      // pdf.js worker chunk, lazy-loaded assets, and the logo used in the panel.
+      // pdf.js worker chunk, lazy-loaded assets, the logo, and the content
+      // bundle (so on-demand injection can load its chunks on any site).
       resources: ['assets/*', '*.js', '*.css', 'icons/*'],
-      matches: JOB_SITE_MATCHES,
+      matches: ['<all_urls>'],
     },
   ],
   icons: {

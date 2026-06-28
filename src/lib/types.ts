@@ -149,6 +149,8 @@ export type Message =
   | { type: 'IS_DISMISSED'; url: string }
   | { type: 'CLEAR_DISMISS'; url: string }
   | { type: 'OPEN_PANEL' }
+  | { type: 'GET_JOB' }
+  | { type: 'PING_CONTENT' }
   | { type: 'PING' };
 
 export type EvaluateResponse =

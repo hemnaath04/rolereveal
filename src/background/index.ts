@@ -208,9 +208,27 @@ chrome.runtime.onInstalled.addListener(() => {
 
 chrome.contextMenus.onClicked.addListener((info, tab) => {
   if (info.menuItemId === 'rolereveal-eval-selection' && tab?.id && info.selectionText) {
-    chrome.tabs.sendMessage(tab.id, {
-      type: 'EVAL_SELECTION',
-      text: info.selectionText,
-    });
+    const tabId = tab.id;
+    const text = info.selectionText;
+    void (async () => {
+      // The content script may not be auto-injected on this site — inject it on
+      // demand (the right-click is a user gesture that grants activeTab).
+      const present = await chrome.tabs
+        .sendMessage(tabId, { type: 'PING_CONTENT' })
+        .then(() => true)
+        .catch(() => false);
+      if (!present) {
+        const files = chrome.runtime.getManifest().content_scripts?.[0]?.js ?? [];
+        if (files.length) {
+          try {
+            await chrome.scripting.executeScript({ target: { tabId }, files });
+            await new Promise((r) => setTimeout(r, 300));
+          } catch {
+            return;
+          }
+        }
+      }
+      chrome.tabs.sendMessage(tabId, { type: 'EVAL_SELECTION', text }).catch(() => null);
+    })();
   }
 });

@@ -52,14 +52,23 @@ details.
 ## Permission justifications (paste into the dashboard)
 - storage: Store the user's resumes, settings, and application tracker locally on
   their device.
-- activeTab: Read the job description on the tab the user is viewing so it can be
-  scored when they open the popup.
+- activeTab: When the user clicks "Evaluate current tab", read the job posting on
+  the tab they are actively viewing so it can be scored against their resume.
+- scripting: Inject the scoring content script on demand into the active tab when
+  the user clicks "Evaluate current tab" on a site that is not one of the
+  pre-listed job boards. Only runs in response to that explicit user action.
 - contextMenus: Provide a right-click "evaluate selected text" option to score a
   highlighted job description.
-- Host permissions (all sites): Job postings appear on many different career sites
-  and job boards, so the extension must be able to read a job description on
-  whatever site the user is on. It only activates when a job posting is detected
-  and is otherwise inert.
+- Host permissions: Limited to the LLM API endpoints the extension calls to
+  generate a score (the built-in RoleReveal service and the optional providers a
+  user can choose, plus localhost for self-hosted models). These are needed so
+  the background service worker's requests to those APIs are not blocked by CORS.
+  The extension does NOT request access to arbitrary websites; it auto-runs only
+  on a fixed list of major job boards/ATS platforms (LinkedIn, Indeed, Glassdoor,
+  Greenhouse, Lever, Workday, etc.) and otherwise only on the active tab when the
+  user explicitly clicks Evaluate.
+- optional_host_permissions: Requested at runtime (never at install) only if the
+  user configures a custom/self-hosted LLM endpoint, so the worker can reach it.
 
 ## Remote code
 None. All executed code is bundled in the package. The extension sends data to a
