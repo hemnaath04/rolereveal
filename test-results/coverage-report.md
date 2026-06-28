@@ -27,7 +27,7 @@ SW + `chrome-extension://` id (`dfacgjmhpdchkaofkjeinngackhmmijo`) · extension 
 - CAPTCHA_PRESENT: **2**
 - LOGIN_REQUIRED: **0**
 - NO_PUBLIC_TEST_URL (reachable but no auto-discoverable public job URL / tenant-gated ATS): **69**
-- **Remaining extension failures: 0**
+- **Observed extension failures on live-tested platforms: 0**
 - Passing platforms requiring hard refresh: **0**
 - Manual generic fallback: **enabled**
 
@@ -57,7 +57,7 @@ Blocked platforms: 27
 Login-required platforms: 0
 CAPTCHA platforms: 2
 Platforms without public URLs: 69
-Remaining extension failures: 0
+Observed extension failures on live-tested platforms: 0
 Passing platforms requiring hard refresh: 0
 Manual generic fallback: enabled
 Final production checksum: 6b4eebfca7d471c63ea740ddfa46ed196acf0f4fd885114bee185d7b23ecb56c

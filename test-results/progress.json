@@ -1,11 +1,20 @@
 {
   "totalPlatforms": 100,
-  "assignedPlatforms": 100,
-  "completedPlatforms": 100,
-  "passedPlatforms": 2,
-  "failedPlatforms": 0,
-  "blockedPlatforms": 98,
-  "remainingPlatforms": [],
-  "currentBuildChecksum": "6b4eebfca7d471c63ea740ddfa46ed196acf0f4fd885114bee185d7b23ecb56c",
-  "iteration": 1
+  "verifiedAutomatic": [
+    "glassdoor",
+    "greenhouse",
+    "lever",
+    "ashby",
+    "smartrecruiters"
+  ],
+  "verifiedCount": 5,
+  "statusCounts": {
+    "LOGIN_REQUIRED": 1,
+    "CAPTCHA_PRESENT": 3,
+    "PASS": 5,
+    "NO_PUBLIC_TEST_URL": 67,
+    "SITE_BLOCKED": 24
+  },
+  "currentBuildChecksum": "9a665d37b1af6124624402f75ea41643574bc78b7335c047ec1211b536083ea6",
+  "iteration": 2
 }

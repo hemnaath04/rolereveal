@@ -6,6 +6,19 @@ import type { JobSiteAdapter } from './types';
 import type { JobSummary } from '../../lib/types';
 import { revealApply } from './reveal';
 import { insertionBelowApply } from './insert';
+import { readJsonLdJob } from '../../lib/jd-extract';
+
+/** JobPosting JSON-LD on the page (title/company/description), if present. Used
+ *  as a fallback when a board's own selectors are missing or slow to render
+ *  (e.g. Workday's data-automation-id nodes appear only after async load). */
+function ldJob(): { title: string; company: string; description: string } {
+  const j = readJsonLdJob();
+  return {
+    title: (j?.title || '').replace(/\s+/g, ' ').trim(),
+    company: (j?.company || '').replace(/\s+/g, ' ').trim(),
+    description: (j?.description || '').replace(/\s+/g, ' ').trim(),
+  };
+}
 
 export const clean = (s: string | null | undefined): string =>
   (s || '').replace(/\s+/g, ' ').trim();
@@ -112,7 +125,9 @@ export function makeAtsAdapter(spec: AtsSpec): JobSiteAdapter {
     },
 
     findDetailsPanel() {
-      if (!firstEl(spec.descSelectors)) return null;
+      // Inject when the board's own description is present OR a JobPosting
+      // JSON-LD exists (covers SPA boards like Workday whose DOM lags).
+      if (!firstEl(spec.descSelectors) && !ldJob().description) return null;
       return (document.querySelector('main') as HTMLElement) || document.body;
     },
 
@@ -134,17 +149,25 @@ export function makeAtsAdapter(spec: AtsSpec): JobSiteAdapter {
 
     extractDetailsSummary(): JobSummary | null {
       const id = adapter.findDetailsJobId();
-      const title = firstText(spec.titleSelectors);
+      const ld = ldJob();
+      const title = firstText(spec.titleSelectors) || ld.title;
       if (!id || !title) return null;
       const company =
         (spec.companySelectors ? firstText(spec.companySelectors) : '') ||
-        (spec.companyFallback ? spec.companyFallback() : ogCompany());
+        (spec.companyFallback ? spec.companyFallback() : '') ||
+        ld.company ||
+        ogCompany();
       return { id, title, company, url: location.href };
     },
 
     extractFullJobDescription() {
-      const t = fullText(firstEl(spec.descSelectors));
-      return t.length >= 80 ? t : null;
+      const sel = fullText(firstEl(spec.descSelectors));
+      const ld = ldJob().description;
+      // Prefer whichever source gives the fuller description (Workday's DOM may
+      // be empty while its JSON-LD is complete; SmartRecruiters' selector may
+      // capture only a short intro).
+      const best = ld.length > sel.length ? ld : sel;
+      return best.length >= 80 ? best : null;
     },
 
     clickApply() {
