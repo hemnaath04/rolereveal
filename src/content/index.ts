@@ -9,6 +9,7 @@ import { createObserver } from './observer';
 import { onRouteChange } from './navigation';
 import {
   clearDismissForCurrent,
+  forgetAnalysisForReeval,
   processSelectedJobDetails,
   processVisibleJobCards,
   resetDetailsState,
@@ -79,6 +80,24 @@ function init(): void {
       return true;
     }
     return undefined;
+  });
+
+  // React to résumé / settings changes (made on the Options page) so an
+  // already-open tab re-scores WITHOUT a refresh. defaultResumeId + autoRun live
+  // in the 'settings' object; résumés in 'resumes'.
+  chrome.storage.onChanged.addListener((changes, area) => {
+    if (area !== 'local') return;
+    if (!changes.resumes && !changes.settings) return;
+    void (async () => {
+      try {
+        const resumes = await getEnabledResumes();
+        setResumeText(resumes.map((r) => r.text).join('\n'));
+      } catch {
+        /* local estimate only */
+      }
+      forgetAnalysisForReeval(); // drop cache + panel; preserve dismissal
+      process(); // re-inject + re-analyze the current job
+    })();
   });
 
   void main();

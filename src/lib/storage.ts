@@ -81,6 +81,37 @@ export async function getEnabledResumes(): Promise<Resume[]> {
   return (await getResumes()).filter((r) => r.enabled && r.text.trim().length > 0);
 }
 
+export async function getDefaultResumeId(): Promise<string | null> {
+  return (await getSettings()).defaultResumeId;
+}
+
+export async function setDefaultResumeId(id: string | null): Promise<void> {
+  await saveSettings({ defaultResumeId: id });
+}
+
+/**
+ * Repair the default-résumé selection so the extension never stalls on a missing
+ * or stale default. Returns the usable default résumé, or null when the user
+ * genuinely must choose (multiple enabled, none selected) or add one (none).
+ * Pure-ish: only writes when it can auto-resolve. Run on startup, when options
+ * load, before analysis, and whenever résumés/enabled state change.
+ */
+export async function ensureDefaultResume(): Promise<Resume | null> {
+  const enabled = await getEnabledResumes();
+  const defaultId = await getDefaultResumeId();
+  const current = enabled.find((r) => r.id === defaultId);
+  if (current) return current;
+
+  // Exactly one usable résumé → make it the default automatically.
+  if (enabled.length === 1) {
+    await setDefaultResumeId(enabled[0].id);
+    return enabled[0];
+  }
+  // Default points at a deleted/disabled résumé → clear the stale id.
+  if (defaultId) await setDefaultResumeId(null);
+  return null; // 0 enabled (setup) or >1 with none chosen (chooser)
+}
+
 // --- Tracker ----------------------------------------------------------------
 export async function getTracker(): Promise<TrackedApplication[]> {
   return get('tracker', []);

@@ -10,6 +10,7 @@ const chromeStub = {
     onMessage: { addListener: () => {} },
   },
   storage: {
+    onChanged: { addListener: () => {} },
     local: { get: () => Promise.resolve({}), set: () => Promise.resolve() },
     session: {
       get: () => Promise.resolve({}),

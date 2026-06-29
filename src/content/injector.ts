@@ -10,6 +10,7 @@ import { extractJobVia } from './adapters/extract';
 import { validatePage } from './validate';
 import { isStale } from './stale';
 import { deterministicSignals, quickLocalScore } from './deterministic';
+import { getEnabledResumes } from '../lib/storage';
 import {
   ROOT_ATTR,
   appOf,
@@ -20,6 +21,7 @@ import {
   renderCardPanel,
   renderDetailsError,
   renderDetailsResult,
+  renderDetailsSetup,
   renderDetailsSkeleton,
 } from './ui';
 
@@ -184,6 +186,20 @@ async function analyzeDetails(
   const summary = adapter.extractDetailsSummary();
   renderDetailsSkeleton(app, summary);
 
+  // No usable résumé → show an embedded setup state instead of failing silently.
+  const enabled = await getEnabledResumes().catch(() => []);
+  if (enabled.length === 0) {
+    if (host.isConnected && !stale()) {
+      renderDetailsSetup(app, {
+        message: 'RoleReveal needs a résumé before it can score this job.',
+        buttonLabel: 'Add résumé',
+        onAction: () => void send({ type: 'OPEN_OPTIONS' }),
+      });
+    }
+    detailsInFlight = null;
+    return;
+  }
+
   // The job description may still be rendering (SPA route, lazy content). Poll
   // briefly while the loading screen stays up, instead of erroring on the first
   // miss — this is the difference between "loads for some jobs" and all of them.
@@ -293,4 +309,18 @@ export function resetDetailsState(): void {
   detailsRenderedId = null;
   // Invalidate any in-flight analysis (e.g. SPA route to a non-job page).
   analysisToken++;
+}
+
+/**
+ * Forget cached analysis + remove the panel so the next process() re-analyzes
+ * the current job from scratch. Used when résumé/settings change (storage event)
+ * so an already-open tab re-scores without a refresh. Dismissal state is
+ * intentionally preserved (a config change must not un-dismiss or re-dismiss).
+ */
+export function forgetAnalysisForReeval(): void {
+  detailsCache.clear();
+  detailsInFlight = null;
+  detailsRenderedId = null;
+  analysisToken++;
+  removeDetailsHost();
 }

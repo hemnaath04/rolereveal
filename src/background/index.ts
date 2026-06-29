@@ -12,6 +12,7 @@ import {
 } from '../lib/prompts';
 import { normalizeResult } from '../lib/scoring';
 import {
+  ensureDefaultResume,
   getClientId,
   getEnabledResumes,
   getResumes,
@@ -74,6 +75,8 @@ async function handleEvaluate(
   msg: Extract<Message, { type: 'EVALUATE' }>,
 ): Promise<EvaluateResponse> {
   const settings = await getSettings();
+  // Self-heal the default selection (e.g. one enabled résumé, no default set).
+  await ensureDefaultResume();
   const resumes = await getEnabledResumes();
   if (resumes.length === 0) {
     return { ok: false, error: 'No enabled resumes. Add one in RoleReveal options.' };
@@ -155,6 +158,10 @@ chrome.runtime.onMessage.addListener((msg: Message, sender, sendResponse) => {
       case 'PING':
         sendResponse({ ok: true });
         break;
+      case 'OPEN_OPTIONS':
+        chrome.runtime.openOptionsPage();
+        sendResponse({ ok: true });
+        break;
       case 'GET_SETTINGS':
         sendResponse(await getSettings());
         break;
@@ -232,3 +239,6 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
     })();
   }
 });
+
+// Self-heal the default-résumé selection when the service worker starts.
+void ensureDefaultResume().catch(() => {});

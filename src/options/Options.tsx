@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import type { Resume, Settings } from '../lib/types';
-import { getResumes, getSettings, saveResumes, saveSettings } from '../lib/storage';
+import { ensureDefaultResume, getResumes, getSettings, saveResumes, saveSettings } from '../lib/storage';
 import { extractPdfText } from '../lib/pdf';
 import { parseResumeImport } from '../lib/resume-import';
 import { newId } from '../lib/tracker';
@@ -13,13 +13,20 @@ export function Options() {
   const [saved, setSaved] = useState(false);
 
   useEffect(() => {
-    void getResumes().then(setResumes);
-    void getSettings().then(setSettings);
+    void (async () => {
+      setResumes(await getResumes());
+      await ensureDefaultResume(); // self-heal (e.g. one enabled résumé, no default)
+      setSettings(await getSettings());
+    })();
   }, []);
 
   const persistResumes = async (next: Resume[]) => {
     setResumes(next);
     await saveResumes(next);
+    // Auto-select the default when adding/enabling/deleting leaves exactly one
+    // usable résumé (or repair a stale default). Reflect it in the UI.
+    await ensureDefaultResume();
+    setSettings(await getSettings());
   };
 
   const patchSettings = async (patch: Partial<Settings>) => {

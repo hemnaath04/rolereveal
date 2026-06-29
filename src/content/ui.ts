@@ -300,3 +300,18 @@ export function renderDetailsError(app: HTMLElement, message: string, onRetry: (
     </div>`;
   app.querySelector('#aj-retry')?.addEventListener('click', onRetry);
 }
+
+/** Compact embedded setup state — shown instead of nothing when a job is
+ *  detected but there's no usable résumé yet (no silent failure). */
+export function renderDetailsSetup(
+  app: HTMLElement,
+  opts: { message: string; buttonLabel: string; onAction: () => void },
+): void {
+  app.innerHTML = `
+    <div class="aj" data-testid="role-reveal-setup">
+      <div class="head"><span class="brand"><img src="${LOGO_URL}" alt=""> RoleReveal</span></div>
+      <div class="muted" style="font-size:12.5px;margin:6px 0 12px">${esc(opts.message)}</div>
+      <div class="actions"><button class="btn primary" id="aj-setup">${esc(opts.buttonLabel)}</button></div>
+    </div>`;
+  app.querySelector('#aj-setup')?.addEventListener('click', opts.onAction);
+}
