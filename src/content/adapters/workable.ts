@@ -1,10 +1,12 @@
-// Workable (apply.workable.com, jobs.workable.com).
+// Workable single-posting boards (apply.workable.com, <company>.workable.com).
+// jobs.workable.com (the aggregated split-pane search board) is a different
+// layout handled by workable-jobs.ts, so it's excluded here.
 import { makeAtsAdapter } from './ats-helpers';
 
 export const workableAdapter = makeAtsAdapter({
   site: 'Workable',
   matches(url) {
-    return /(^|\.)workable\.com$/.test(url.hostname);
+    return /(^|\.)workable\.com$/.test(url.hostname) && url.hostname !== 'jobs.workable.com';
   },
   titleSelectors: ['[data-ui="job-title"]', 'h1'],
   companySelectors: ['[data-ui="company-name"]'],

@@ -21,7 +21,7 @@
     {
       "id": "indeed",
       "region": "globalBoards",
-      "supportLevel": "automatic-beta",
+      "supportLevel": "verified-automatic",
       "patterns": [
         "*://*.indeed.ae/*",
         "*://*.indeed.ca/*",
@@ -46,7 +46,7 @@
     {
       "id": "glassdoor",
       "region": "globalBoards",
-      "supportLevel": "automatic-beta",
+      "supportLevel": "verified-automatic",
       "patterns": [
         "*://*.glassdoor.ca/*",
         "*://*.glassdoor.co.in/*",
@@ -60,7 +60,7 @@
     {
       "id": "ziprecruiter",
       "region": "globalBoards",
-      "supportLevel": "automatic-beta",
+      "supportLevel": "verified-automatic",
       "patterns": [
         "*://*.ziprecruiter.com/*"
       ]
@@ -254,7 +254,7 @@
     {
       "id": "workable",
       "region": "globalATS",
-      "supportLevel": "automatic-beta",
+      "supportLevel": "verified-automatic",
       "patterns": [
         "*://apply.workable.com/*",
         "*://jobs.workable.com/*"

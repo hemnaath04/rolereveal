@@ -253,7 +253,7 @@ export function renderDetailsResult(
 
       <div class="notes">
         ${result.whyMatch ? `<div><span class="tag good">Why you match</span>${esc(result.whyMatch)}</div>` : ''}
-        ${result.watchOuts ? `<div><span class="tag warn">Watch-outs</span>${esc(result.watchOuts)}</div>` : ''}
+        ${result.watchOuts ? `<div><span class="tag warn">Gaps</span>${esc(result.watchOuts)}</div>` : ''}
       </div>
 
       <div class="actions">

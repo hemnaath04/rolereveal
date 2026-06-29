@@ -5,7 +5,7 @@ import type { Resume } from './types';
 
 export const EVAL_SYSTEM_PROMPT = `You are a precise technical recruiter. Compare the candidate's resume(s) to the job description. Score on genuine skill and requirement match, not keyword stuffing. Never assume skills not present in the resume. Weigh eligibility mismatches heavily (work authorization or sponsorship, role term or season, location, seniority). Be honest: if it is a weak or off-target fit, return Skip.
 
-Provide three 0-100 sub-scores in "dimensions": "skills" (how well the resume's skills cover the role's required skills), "experience" (seniority and years/domain relevance), and "roleContext" (overall fit including location, term, eligibility, and role type). "overallScore" should be consistent with these. Keep "whyMatch" and "watchOuts" to short phrases. Return only valid JSON in the given schema, no other commentary.`;
+Provide three 0-100 sub-scores in "dimensions": "skills" (how well the resume's skills cover the role's required skills), "experience" (seniority and years/domain relevance), and "roleContext" (overall fit including location, term, eligibility, and role type). "overallScore" should be consistent with these. Keep "whyMatch" and "watchOuts" to short phrases. "watchOuts" must ALWAYS name at least one genuine gap or risk the candidate is missing for this role (missing skills, domain, seniority, or an eligibility issue like work authorization/sponsorship, term/season, or location); never leave it empty. If the fit is strong, still state the smallest real remaining gap. Return only valid JSON in the given schema, no other commentary.`;
 
 /** The exact JSON shape the model must return. */
 export const EVAL_JSON_SCHEMA = `{
@@ -22,7 +22,7 @@ export const EVAL_JSON_SCHEMA = `{
     "roleContext": 0
   },
   "whyMatch": "SHORT phrase (<=12 words) of the candidate's genuine strengths for THIS role, e.g. '5+ yrs backend, REST APIs, CI/CD, Java'",
-  "watchOuts": "SHORT phrase (<=14 words) of the main gaps or risks, including any eligibility issue, e.g. 'No fintech domain; visa sponsorship not offered'"
+  "watchOuts": "REQUIRED, never empty. SHORT phrase (<=14 words) naming the main gaps the candidate is missing or risks for THIS role, including any eligibility issue, e.g. 'No fintech domain; visa sponsorship not offered'"
 }`;
 
 // Bound the prompt so a long JD or several long resumes don't blow up latency

@@ -1,6 +1,6 @@
 {
   "name": "rolereveal",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Resume match score for any job — see how well you fit a posting, with an Apply/Maybe/Skip verdict and the skills you're missing.",
   "type": "module",
   "scripts": {

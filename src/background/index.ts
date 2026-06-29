@@ -22,7 +22,6 @@ import {
 } from '../lib/storage';
 import { evalCacheKey } from '../lib/hash';
 import { addApplication } from '../lib/tracker';
-import { normalizeUrl } from '../lib/url';
 import type {
   EvaluateResponse,
   IsDismissedResponse,
@@ -33,7 +32,8 @@ import type {
 // ── Per-tab dismissed-panel registry (chrome.storage.session) ────────────────
 // Content scripts can't read chrome.storage.session, so dismissal state lives
 // here and is queried over messages. Keyed `dismissed:<tabId>` → string[] of
-// normalizeUrl(url).
+// opaque per-job dismissal ids (`<site>:<jobKey>`), so closing one job in a
+// split-pane/SPA view doesn't dismiss every other job at the same URL.
 const dismissKey = (tabId: number): string => `dismissed:${tabId}`;
 
 async function getDismissed(tabId: number): Promise<string[]> {
@@ -43,16 +43,14 @@ async function getDismissed(tabId: number): Promise<string[]> {
   return Array.isArray(value) ? (value as string[]) : [];
 }
 
-async function addDismissed(tabId: number, url: string): Promise<void> {
-  const norm = normalizeUrl(url);
+async function addDismissed(tabId: number, id: string): Promise<void> {
   const list = await getDismissed(tabId);
-  if (!list.includes(norm)) list.push(norm);
+  if (!list.includes(id)) list.push(id);
   await chrome.storage.session.set({ [dismissKey(tabId)]: list });
 }
 
-async function removeDismissed(tabId: number, url: string): Promise<void> {
-  const norm = normalizeUrl(url);
-  const list = (await getDismissed(tabId)).filter((u) => u !== norm);
+async function removeDismissed(tabId: number, id: string): Promise<void> {
+  const list = (await getDismissed(tabId)).filter((u) => u !== id);
   await chrome.storage.session.set({ [dismissKey(tabId)]: list });
 }
 
@@ -186,7 +184,7 @@ chrome.runtime.onMessage.addListener((msg: Message, sender, sendResponse) => {
       case 'IS_DISMISSED': {
         const tabId = sender.tab?.id;
         const list = tabId !== undefined ? await getDismissed(tabId) : [];
-        const res: IsDismissedResponse = { dismissed: list.includes(normalizeUrl(msg.url)) };
+        const res: IsDismissedResponse = { dismissed: list.includes(msg.url) };
         sendResponse(res);
         break;
       }

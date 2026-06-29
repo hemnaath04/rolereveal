@@ -45,12 +45,16 @@ let detailsRenderedId: string | null = null;
 // value; after its awaited work it bails if a newer analysis bumped the token.
 let analysisToken = 0;
 
-// Dismissal lifecycle, keyed by normalizeUrl(location.href). `dismissed` is the
-// in-memory truth that stops the MutationObserver from re-injecting; `checked`
-// records which keys we've already queried the background session store for, so
-// a reload of a previously-dismissed job stays dismissed without flashing.
+// Dismissal lifecycle, keyed by the canonical per-job id `<site>:<jobKey>` (NOT
+// location.href — split-pane/SPA views keep one URL across many jobs, so a url
+// key would dismiss every job at once). `dismissed` is the in-memory truth that
+// stops the MutationObserver from re-injecting; `checked` records which keys
+// we've already queried the background session store for, so a reload of a
+// previously-dismissed job stays dismissed without flashing. `currentDismissKey`
+// is the active job's key, so the ×/re-open handlers act on the right job.
 const dismissed = new Set<string>();
 const checked = new Set<string>();
+let currentDismissKey: string | null = null;
 
 function directChildRoot(parent: HTMLElement, kind: string): HTMLElement | null {
   for (const c of Array.from(parent.children)) {
@@ -119,20 +123,22 @@ export function processSelectedJobDetails(adapter: JobSiteAdapter): void {
   }
   const jobId = verdict.job.key;
 
-  const key = normalizeUrl(location.href);
+  // Per-job dismissal id (survives selecting a different job at the same URL).
+  const key = `${adapter.site}:${jobId}`;
+  currentDismissKey = key;
 
   // Dismissal guards — run before any injection so the observer can't re-add a
-  // panel the user closed for this job url.
+  // panel the user closed for this job.
   if (dismissed.has(key)) {
     removeDetailsHost();
     return;
   }
   if (!checked.has(key)) {
-    // Wait one tick: ask the background session store whether this url was
+    // Wait one tick: ask the background session store whether this job was
     // dismissed in this tab (e.g. before a reload) so it doesn't flash.
     checked.add(key);
     void chrome.runtime
-      .sendMessage({ type: 'IS_DISMISSED', url: location.href })
+      .sendMessage({ type: 'IS_DISMISSED', url: key })
       .then((r: IsDismissedResponse | undefined) => {
         if (r?.dismissed) dismissed.add(key);
       })
@@ -285,23 +291,24 @@ function renderResult(
   );
 }
 
-// Mark the current job url dismissed (in-memory + background session) and remove
-// the panel host. The × button calls this; the observer then won't re-inject.
+// Mark the current job dismissed (in-memory + background session) and remove the
+// panel host. The × button calls this; the observer then won't re-inject. Keyed
+// by the active job's `<site>:<jobKey>` so other jobs at the same URL stay open.
 function dismissCurrent(): void {
-  const key = normalizeUrl(location.href);
+  const key = currentDismissKey ?? normalizeUrl(location.href);
   dismissed.add(key);
   checked.add(key);
-  void send({ type: 'DISMISS_PANEL', url: location.href });
+  void send({ type: 'DISMISS_PANEL', url: key });
   removeDetailsHost();
 }
 
 // Deliberate user re-open path (popup "Show panel on page"): forget the
 // dismissal so the next process() pass injects a fresh panel.
 export function clearDismissForCurrent(): void {
-  const key = normalizeUrl(location.href);
+  const key = currentDismissKey ?? normalizeUrl(location.href);
   dismissed.delete(key);
   checked.delete(key);
-  void send({ type: 'CLEAR_DISMISS', url: location.href });
+  void send({ type: 'CLEAR_DISMISS', url: key });
 }
 
 export function resetDetailsState(): void {

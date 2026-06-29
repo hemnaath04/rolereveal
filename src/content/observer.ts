@@ -22,12 +22,26 @@ export function createObserver(process: () => void, ms = 150) {
       if (container === current) return;
       mo.disconnect();
       current = container;
-      if (container) {
-        mo.observe(container, { childList: true, subtree: true });
-      } else {
-        // No specific container yet — watch the body shallowly until it appears.
-        mo.observe(document.body, { childList: true, subtree: true });
-      }
+      // childList+subtree catches SPA re-renders (right-pane swaps). The filtered
+      // attribute watch catches split-pane selection changes that update the
+      // detail IN PLACE — clicking another job toggles data-selected/aria-selected
+      // /data-jobid on the cards without adding/removing nodes, which would
+      // otherwise leave the panel keyed to the previously-selected job (stale).
+      // Deliberately NOT watching `class` (hover/animation churn) or characterData.
+      const opts: MutationObserverInit = {
+        childList: true,
+        subtree: true,
+        attributes: true,
+        attributeFilter: [
+          'aria-selected',
+          'data-selected',
+          'data-jobid',
+          'data-job-id',
+          'data-jk',
+          'href',
+        ],
+      };
+      mo.observe(container ?? document.body, opts);
       run();
     },
     stop() {
