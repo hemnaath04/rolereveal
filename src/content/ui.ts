@@ -121,6 +121,7 @@ export function getOrCreateDetailsHost(): HTMLElement {
   const host = document.createElement('div');
   host.id = DETAILS_ROOT_ID;
   host.setAttribute(ROOT_ATTR, 'details');
+  host.setAttribute('data-testid', 'role-reveal-root');
   host.dataset.owner = chrome.runtime.id;
   const shadow = host.attachShadow({ mode: 'open' });
   const style = document.createElement('style');
@@ -223,7 +224,7 @@ export function renderDetailsResult(
         <span class="brand"><img src="${LOGO_URL}" alt=""> RoleReveal</span>
         <span>
           <button class="iconbtn" id="aj-rerun" title="Re-run">↻</button>
-          <button class="iconbtn" id="aj-x" title="Dismiss">×</button>
+          <button class="iconbtn" id="aj-x" data-testid="role-reveal-close" title="Dismiss">×</button>
         </span>
       </div>
 
@@ -236,11 +237,11 @@ export function renderDetailsResult(
             <circle class="ring-track" cx="60" cy="60" r="52"/>
             <circle class="ring-prog" cx="60" cy="60" r="52"/>
           </svg>
-          <div class="donut-num" id="aj-num">0</div>
+          <div class="donut-num" id="aj-num" data-testid="role-reveal-score">0</div>
         </div>
         <div class="meta">
           <span class="badge ${fit.cls}">${fit.label}</span>
-          <div class="title">${esc(titleLine)}</div>
+          <div class="title" data-testid="role-reveal-job-title">${esc(titleLine)}</div>
         </div>
       </div>
 

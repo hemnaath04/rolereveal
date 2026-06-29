@@ -14,24 +14,22 @@ const fullText = (el: Element | null): string => {
   return text.length > inner.length ? text : inner;
 };
 
-const first = (sels: string[]): HTMLElement | null => {
-  for (const s of sels) {
-    const el = document.querySelector(s);
-    if (el) return el as HTMLElement;
-  }
-  return null;
-};
-
-// The selected job's detail lives in the right pane on a search page, or fills
-// the page on /viewjob. These selectors target THAT job — never the search
-// heading ("<query> jobs in <city>"), which is a separate <h1>.
+// All extraction is scoped to the SELECTED right-side detail pane — never the
+// left search-result cards. The detail pane fills the page on /viewjob, or is the
+// right column on a split search page.
+const PANE_SELECTORS = [
+  '.jobsearch-RightPane',
+  '[data-testid="jobsearch-ViewjobPaneWrapper"]',
+  '#jobsearch-ViewjobPaneWrapper',
+  '.jobsearch-JobComponent',
+  '#vjs-container',
+];
+// Title/company/desc selectors, queried ONLY inside the detail pane. (No
+// 'simpler-jobTitle' here — that's a left search-card title.)
 const TITLE_SELECTORS = [
-  'h2[data-testid="jobsearch-JobInfoHeader-title"]',
-  'h1[data-testid="jobsearch-JobInfoHeader-title"]',
+  '[data-testid="jobsearch-JobInfoHeader-title"]',
   'h2.jobsearch-JobInfoHeader-title',
   'h1.jobsearch-JobInfoHeader-title',
-  '[data-testid="simpler-jobTitle"]',
-  '[data-testid="jobsearch-JobInfoHeader-title"]',
 ];
 const COMPANY_SELECTORS = [
   '[data-testid="inlineHeader-companyName"]',
@@ -40,30 +38,54 @@ const COMPANY_SELECTORS = [
   '.jobsearch-JobInfoHeader-companyNameLink',
   '.jobsearch-CompanyInfoContainer a',
 ];
-const DESC_SELECTORS = [
-  '#jobDescriptionText',
-  '[data-testid="jobsearch-JobComponent-description"]',
+const LOCATION_SELECTORS = [
+  '[data-testid="inlineHeader-companyLocation"]',
+  '[data-testid="jobsearch-JobInfoHeader-companyLocation"]',
+  '[data-testid="job-location"]',
 ];
-const PANE_SELECTORS = [
-  '.jobsearch-RightPane',
-  '[data-testid="jobsearch-ViewjobPaneWrapper"]',
-  '#jobsearch-ViewjobPaneWrapper',
-  '.jobsearch-JobComponent',
-  '#vjs-container',
-];
+const DESC_SELECTORS = ['#jobDescriptionText', '[data-testid="jobsearch-JobComponent-description"]'];
 
-function jobKey(): string | null {
+/** The currently-selected job's detail pane, or null on a bare search list. */
+function detailPane(): HTMLElement | null {
+  for (const s of PANE_SELECTORS) {
+    const el = document.querySelector(s) as HTMLElement | null;
+    if (el) return el;
+  }
+  return null;
+}
+
+/** First matching element WITHIN a root (pane-scoped). */
+function within(root: ParentNode | null, sels: string[]): HTMLElement | null {
+  if (!root) return null;
+  for (const s of sels) {
+    const el = root.querySelector(s) as HTMLElement | null;
+    if (el) return el;
+  }
+  return null;
+}
+
+function paneTitle(pane: HTMLElement | null): string {
+  // SERP split-view appends " - job post" to the title node; strip it.
+  return clean(within(pane, TITLE_SELECTORS)?.textContent).replace(/\s*-\s*job post\s*$/i, '');
+}
+
+/**
+ * Canonical selected-job key. Strongest signal first: URL vjk/jk (Indeed sets
+ * these to the SELECTED job), then the apply link's jk, then a hash of the
+ * right-pane title so the panel still re-keys between selections.
+ */
+function jobKey(pane: HTMLElement | null): string | null {
   const p = new URLSearchParams(location.search);
   const k = p.get('vjk') || p.get('jk');
   if (k) return k;
-  // Fallback: derive a stable id from the selected job's title so the panel
-  // still updates between selections even if the URL param is absent.
-  const title = clean(first(TITLE_SELECTORS)?.textContent);
-  return title ? `t:${title}` : null;
+  const applyHref =
+    pane?.querySelector<HTMLAnchorElement>('a[href*="jk="]')?.getAttribute('href') || '';
+  const m = applyHref.match(/[?&]jk=([^&]+)/);
+  if (m) return m[1];
+  const t = paneTitle(pane);
+  return t ? `t:${t}` : null;
 }
 
-// Indeed (indeed.com and country subdomains). Split-view search + /viewjob. We
-// only inject the details panel, scoped to the SELECTED job in the right pane.
 export const indeedAdapter: JobSiteAdapter = {
   site: 'indeed',
   dedicated: true,
@@ -74,15 +96,15 @@ export const indeedAdapter: JobSiteAdapter = {
 
   isSupportedPage() {
     if (!/(^|\.)indeed\.[a-z.]+$/.test(location.hostname)) return false;
-    // A real job detail must be present (title + description), otherwise this is
-    // a bare search list with nothing selected — leave it to no panel.
-    return !!first(TITLE_SELECTORS) && !!first(DESC_SELECTORS);
+    // Require a selected detail pane with a real title + description. A bare
+    // search list (nothing selected) has no pane → no panel.
+    const pane = detailPane();
+    return !!within(pane, TITLE_SELECTORS) && !!within(pane, DESC_SELECTORS);
   },
 
   getResultsContainer() {
     return (document.querySelector('main') as HTMLElement) || document.body;
   },
-
   getJobCards() {
     return [];
   },
@@ -97,58 +119,58 @@ export const indeedAdapter: JobSiteAdapter = {
   },
 
   findDetailsPanel() {
-    // Only when a selected-job detail is actually rendered.
-    if (!first(TITLE_SELECTORS) || !first(DESC_SELECTORS)) return null;
-    return first(PANE_SELECTORS) || (document.querySelector('main') as HTMLElement) || document.body;
+    const pane = detailPane();
+    if (!pane || !within(pane, TITLE_SELECTORS) || !within(pane, DESC_SELECTORS)) return null;
+    return pane;
   },
 
   findDetailsInsertionPoint(panel) {
-    // Put the panel at the TOP of the right pane so it's visible without
-    // scrolling. On Indeed's split-view the description (#jobDescriptionText)
-    // sits far below "Job details / Pay / Location", so anchoring above the
-    // description pushes the panel off-screen.
-    const pane = first(PANE_SELECTORS);
-    if (pane && pane.firstElementChild && pane.firstElementChild.parentElement) {
-      return pane.firstElementChild as HTMLElement;
-    }
-    // Fallbacks: above the description, then the generic below-apply anchor.
-    const desc = first(DESC_SELECTORS);
+    const pane = (panel as HTMLElement) || detailPane();
+    if (!pane) return null;
+    // Required order: title → company/location → apply → RoleReveal → body.
+    // Insert just above the body block (Job details / description), i.e. right
+    // after the header + native apply controls, in normal flow.
+    const body =
+      (pane.querySelector('.jobsearch-embeddedBody') as HTMLElement | null) ||
+      (pane.querySelector('.jobsearch-BodyContainer') as HTMLElement | null);
+    if (body && body.parentElement) return body;
+    // Fallback: directly above the description wrapper.
+    const desc = within(pane, DESC_SELECTORS);
     const descBlock =
-      (desc?.closest('[data-testid="jobsearch-JobComponent-description"]') as HTMLElement) ||
-      desc;
+      (desc?.closest('[data-testid="jobsearch-JobComponent-description"]') as HTMLElement) || desc;
     if (descBlock && descBlock.parentElement) return descBlock;
-    return insertionBelowApply(panel) || panel;
+    // Last resort: below the apply control.
+    return insertionBelowApply(pane);
   },
 
   findDetailsJobId() {
-    return jobKey();
+    return jobKey(detailPane());
   },
 
   extractDetailsSummary() {
-    const id = jobKey();
-    // Indeed's SERP split-view appends " - job post" to the title node; strip it.
-    const title = clean(first(TITLE_SELECTORS)?.textContent).replace(/\s*-\s*job post\s*$/i, '');
+    const pane = detailPane();
+    const id = jobKey(pane);
+    const title = paneTitle(pane);
     if (!id || !title) return null;
-    const company = clean(first(COMPANY_SELECTORS)?.textContent);
-    return { id, title, company, url: location.href };
+    const company = clean(within(pane, COMPANY_SELECTORS)?.textContent);
+    const loc = clean(within(pane, LOCATION_SELECTORS)?.textContent) || undefined;
+    return { id, title, company, location: loc, url: window.location.href };
   },
 
   extractFullJobDescription() {
-    const t = fullText(first(DESC_SELECTORS));
+    const pane = detailPane();
+    const t = fullText(within(pane, DESC_SELECTORS));
     return t.length >= 80 ? t : null;
   },
 
   clickApply() {
-    const container = document.querySelector('#applyButtonLinkContainer');
-    const btn =
-      (container?.querySelector('a, button') as HTMLElement) ||
-      (() => {
-        for (const el of Array.from(document.querySelectorAll<HTMLElement>('a, button'))) {
-          const t = clean(el.textContent).toLowerCase();
-          if (t && t.length < 28 && /\bapply\b/.test(t) && !t.includes('filter')) return el;
-        }
-        return null;
-      })();
-    revealApply(btn); // passive: reveal, don't auto-click
+    const pane = detailPane() || document;
+    for (const el of Array.from(pane.querySelectorAll<HTMLElement>('a, button'))) {
+      const t = clean(el.textContent).toLowerCase();
+      if (t && t.length < 28 && /\bapply\b/.test(t) && !t.includes('filter')) {
+        revealApply(el);
+        return;
+      }
+    }
   },
 };
