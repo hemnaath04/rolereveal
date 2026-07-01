@@ -4,14 +4,15 @@
 
 # RoleReveal
 
-### See how well your résumé actually fits a job — right on the posting.
+### See how well your résumé actually fits a job, right on the posting.
 
-<!-- 👉 Replace the link below with your Chrome Web Store URL once the extension is approved -->
-[**➡️ Add to Chrome**](REPLACE_WITH_CHROME_WEB_STORE_LINK) · [Privacy Policy](./PRIVACY.md) · [Backend](https://github.com/hemnaath04/rolereveal-backend)
+[**➡️ Add to Chrome**](https://chromewebstore.google.com/detail/oplfnlcnahoijcflpjjncplkoakdpobb) · [Privacy Policy](./PRIVACY.md) · [Backend](https://github.com/hemnaath04/rolereveal-backend)
 
-_Chrome Web Store link coming soon — it's in review._
-
-![MIT License](https://img.shields.io/badge/license-MIT-blue) ![Manifest V3](https://img.shields.io/badge/Chrome-MV3-brightgreen)
+[![Chrome Web Store](https://img.shields.io/chrome-web-store/v/oplfnlcnahoijcflpjjncplkoakdpobb?label=Chrome%20Web%20Store&logo=googlechrome&logoColor=white&color=4285F4)](https://chromewebstore.google.com/detail/oplfnlcnahoijcflpjjncplkoakdpobb)
+[![Users](https://img.shields.io/chrome-web-store/users/oplfnlcnahoijcflpjjncplkoakdpobb?label=users&logo=googlechrome&logoColor=white)](https://chromewebstore.google.com/detail/oplfnlcnahoijcflpjjncplkoakdpobb)
+[![Rating](https://img.shields.io/chrome-web-store/rating/oplfnlcnahoijcflpjjncplkoakdpobb)](https://chromewebstore.google.com/detail/oplfnlcnahoijcflpjjncplkoakdpobb)
+![MIT License](https://img.shields.io/badge/license-MIT-blue)
+![Manifest V3](https://img.shields.io/badge/Chrome-MV3-brightgreen)
 
 </div>
 

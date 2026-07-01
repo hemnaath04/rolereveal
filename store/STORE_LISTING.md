@@ -4,46 +4,38 @@
 RoleReveal — AI Job Fit & Resume Match Score
 
 ## Short description (≤132 chars)
-Resume match score for any job — see how well you fit a posting, with an Apply/Maybe/Skip verdict and the skills you're missing.
+Resume match score for any job: see how well you fit a posting, with an Apply/Maybe/Skip verdict and the skills you're missing.
 
 ## Category
 Productivity
 
 ## Detailed description
-> The first ~150 words are the most important for Chrome Web Store search ranking
-> — keywords are front-loaded here, naturally (no stuffing).
 
 RoleReveal is an AI resume match score and job-fit checker that works right on the
-job posting you're viewing. It automatically detects jobs on 100+ major boards and
-ATS worldwide — LinkedIn, Indeed, Glassdoor, Greenhouse, Lever, Ashby, Workday,
-SmartRecruiters, and more — and on any other career site you can score the job in
-one click from the toolbar. Instantly see how well your resume matches the role —
-a 0–100 match score, an Apply / Maybe / Skip verdict, and the required skills,
-qualifications, and ATS keywords you're missing — inline, as you browse.
+job posting you are viewing. Open a role on a major job board or applicant tracking
+system, or on any other career site, and RoleReveal shows how well your resume fits
+the job: a 0 to 100 match score, an Apply, Maybe, or Skip verdict, and the skills
+and qualifications you are missing, all inline as you browse.
 
-Stop guessing whether you're a fit. RoleReveal compares your resume against each
-job description and shows where you're strong and what to add before you apply.
+Stop guessing whether you are a fit. RoleReveal compares your resume against the
+job description and shows where you are strong and what to add before you apply.
 
 Features
-• Live resume match score (0–100) + Apply / Maybe / Skip verdict on every posting
-• Required vs. nice-to-have qualifications, matching skills, and missing skills / ATS keywords
-• Sponsorship, work-mode, and salary signals pulled from the job description
-• Auto-runs on 100+ major job boards and ATS worldwide (LinkedIn, Indeed,
-  Glassdoor, Greenhouse, Lever, Ashby, Workday, SmartRecruiters, NUworks, …);
-  one-click toolbar scoring on any other career site
-• Multiple resumes — it automatically picks your best-matching one
-• Built-in application tracker
+• Live resume match score from 0 to 100, with an Apply, Maybe, or Skip verdict on every posting
+• Your matching skills shown next to the gaps and qualifications you still need
+• Work authorization, work mode, and salary signals read from the job description
+• Automatic detection on major job boards and applicant tracking systems, plus one-click scoring from the toolbar on any other career site
+• Add more than one resume and RoleReveal picks your best-matching one automatically
+• A built-in tracker for the roles you apply to
 
-How it works: add your resume once, then open any job posting — RoleReveal shows a
-match panel inline. Use the built-in AI (no setup) or bring your own provider/API
-key in Options.
+How it works: add your resume once, then open any job posting and RoleReveal shows
+a match panel inline. Use the built-in AI with no setup, or connect your own
+provider or API key in Options.
 
-Private & safe: your personal info (name, email, phone) is masked before scoring,
-resumes stay in local storage, and RoleReveal only reads the posting you're
-viewing — no scraping, no automation, no bulk crawling.
-
-Keywords (woven in naturally): resume match score, job fit, ATS resume checker,
-resume scanner, job match, skill gap, application tracker, LinkedIn, Indeed.
+Private and safe: your personal details such as name, email, and phone are masked
+before scoring, your resumes stay in local storage on your device, and RoleReveal
+only reads the posting you are viewing. There is no scraping, no automation, and no
+bulk crawling.
 
 Open source: https://github.com/hemnaath04/rolereveal
 
@@ -66,9 +58,8 @@ details.
   user can choose, plus localhost for self-hosted models). These are needed so
   the background service worker's requests to those APIs are not blocked by CORS.
   The extension does NOT request access to arbitrary websites; it auto-runs only
-  on a fixed list of major job boards/ATS platforms (LinkedIn, Indeed, Glassdoor,
-  Greenhouse, Lever, Workday, etc.) and otherwise only on the active tab when the
-  user explicitly clicks Evaluate.
+  on a fixed list of major job boards and ATS platforms, and otherwise only on the
+  active tab when the user explicitly clicks Evaluate.
 - optional_host_permissions: Requested at runtime (never at install) only if the
   user configures a custom/self-hosted LLM endpoint, so the worker can reach it.
 
@@ -78,9 +69,9 @@ backend API for scoring but does not download or execute remote code.
 
 ## Privacy practices / data safety answers
 - Does it collect user data? Yes.
-  - Personally identifiable information (the resume may contain name/email/phone)
-    — used only for app functionality (scoring). Not sold. Not used for ads.
-  - Website content (the job description on the current page) — used only to
+  - Personally identifiable information (the resume may contain name/email/phone),
+    used only for app functionality (scoring). Not sold. Not used for ads.
+  - Website content (the job description on the current page), used only to
     compute the score. Not sold.
 - Authentication info: No.
 - Location, health, financial, personal communications: No.
