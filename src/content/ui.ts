@@ -15,8 +15,16 @@ const esc = (s: string): string =>
   s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]!));
 
 // RoleReveal brand card — dark navy, purple→teal gradients, lime "fit" badge.
+// display/position/width/clear/grid-column/flex/z-index here are deliberate:
+// the host can land inside a plain block container, a CSS grid, or a flexbox
+// row depending on the site (e.g. LinkedIn's job page stacks sections in a
+// grid-like column). Without grid-column:1/-1 + flex:0 0 100%, a grid/flex
+// parent can place the host as a normal cell/item that overlaps its neighbors
+// instead of pushing them down; these are no-ops in a plain block parent.
 const BASE_CSS = `
-  :host { all: initial; display: block; width: 100%; box-sizing: border-box;
+  :host { all: initial; display: block; position: relative; width: 100%;
+    max-width: 100%; min-width: 0; box-sizing: border-box; clear: both;
+    grid-column: 1 / -1; flex: 0 0 100%; z-index: auto;
     font-family: 'Sora', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
   *, *::before, *::after { box-sizing: border-box; }
   .aj { position:relative; overflow:hidden; background:#14101F; color:#fff; border-radius:16px;
