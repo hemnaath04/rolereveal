@@ -15,16 +15,8 @@ const esc = (s: string): string =>
   s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]!));
 
 // RoleReveal brand card — dark navy, purple→teal gradients, lime "fit" badge.
-// display/position/width/clear/grid-column/flex/z-index here are deliberate:
-// the host can land inside a plain block container, a CSS grid, or a flexbox
-// row depending on the site (e.g. LinkedIn's job page stacks sections in a
-// grid-like column). Without grid-column:1/-1 + flex:0 0 100%, a grid/flex
-// parent can place the host as a normal cell/item that overlaps its neighbors
-// instead of pushing them down; these are no-ops in a plain block parent.
 const BASE_CSS = `
-  :host { all: initial; display: block; position: relative; width: 100%;
-    max-width: 100%; min-width: 0; box-sizing: border-box; clear: both;
-    grid-column: 1 / -1; flex: 0 0 100%; z-index: auto;
+  :host { all: initial; display: block; width: 100%; box-sizing: border-box;
     font-family: 'Sora', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
   *, *::before, *::after { box-sizing: border-box; }
   .aj { position:relative; overflow:hidden; background:#14101F; color:#fff; border-radius:16px;
@@ -33,6 +25,17 @@ const BASE_CSS = `
   .iconbtn { border:none; background:transparent; cursor:pointer; font-size:15px; color:#8E8799; padding:2px 6px; line-height:1; }
   .iconbtn:hover { color:#fff; }
 `;
+
+// LinkedIn-only: its job page stacks sections in what's very likely a CSS
+// grid/flex column, and a plain block host can land as a normal cell/item
+// there that overlaps its neighbors instead of pushing them down. Scoped to
+// linkedin.com only so every other site's host CSS is untouched.
+const LINKEDIN_HOST_FIX_CSS = `
+  :host { position: relative; max-width: 100%; min-width: 0; clear: both;
+    grid-column: 1 / -1; flex: 0 0 100%; z-index: auto; }
+`;
+const hostFixCss = (): string =>
+  location.hostname.endsWith('linkedin.com') ? LINKEDIN_HOST_FIX_CSS : '';
 
 const CARD_CSS = BASE_CSS + `
   .aj { margin:6px 8px 10px; padding:8px 10px 8px 12px; display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
@@ -101,7 +104,7 @@ export function createShadowHost(jobId: string, kind: 'card' | 'details'): HTMLE
   host.dataset.jobId = jobId;
   const shadow = host.attachShadow({ mode: 'open' });
   const style = document.createElement('style');
-  style.textContent = kind === 'card' ? CARD_CSS : DETAILS_CSS;
+  style.textContent = (kind === 'card' ? CARD_CSS : DETAILS_CSS) + hostFixCss();
   shadow.appendChild(style);
   const app = document.createElement('div');
   app.id = 'app';
@@ -133,7 +136,7 @@ export function getOrCreateDetailsHost(): HTMLElement {
   host.dataset.owner = chrome.runtime.id;
   const shadow = host.attachShadow({ mode: 'open' });
   const style = document.createElement('style');
-  style.textContent = DETAILS_CSS;
+  style.textContent = DETAILS_CSS + hostFixCss();
   shadow.appendChild(style);
   const app = document.createElement('div');
   app.id = 'app';
