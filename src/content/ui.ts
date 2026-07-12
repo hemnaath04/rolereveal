@@ -26,13 +26,18 @@ const BASE_CSS = `
   .iconbtn:hover { color:#fff; }
 `;
 
-// LinkedIn-only: its job page stacks sections in what's very likely a CSS
-// grid/flex column, and a plain block host can land as a normal cell/item
-// there that overlaps its neighbors instead of pushing them down. Scoped to
+// LinkedIn-only: its job page stacks sections (e.g. "About the job") in a
+// layout where a plain block host can end up sitting BESIDE a neighboring
+// section instead of pushing it down onto its own line — the panel and
+// "About the job" rendering side by side. That symptom is the signature of
+// several different CSS layout mechanisms (grid, flexbox, multi-column,
+// floats), so this covers the escape hatch for each; each property is a
+// no-op unless that specific mechanism is actually in play. Scoped to
 // linkedin.com only so every other site's host CSS is untouched.
 const LINKEDIN_HOST_FIX_CSS = `
   :host { position: relative; max-width: 100%; min-width: 0; clear: both;
-    grid-column: 1 / -1; flex: 0 0 100%; z-index: auto; }
+    float: none; grid-column: 1 / -1; flex: 0 0 100%; column-span: all;
+    break-inside: avoid; z-index: auto; }
 `;
 const hostFixCss = (): string =>
   location.hostname.endsWith('linkedin.com') ? LINKEDIN_HOST_FIX_CSS : '';

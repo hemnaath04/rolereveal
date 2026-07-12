@@ -15,8 +15,9 @@
       "region": "globalBoards",
       "supportLevel": "automatic-beta",
       "patterns": [
-        "*://*.linkedin.com/jobs/*"
-      ]
+        "*://*.linkedin.com/*"
+      ],
+      "note": "Widened from /jobs/* on purpose: Chrome only auto-injects a content script on a real page load matching its declared pattern, never on a client-side SPA route change into a URL that didn't match before. LinkedIn is a single-page app, so a user browsing the feed and clicking into Jobs without a full reload would never get the script injected under a /jobs/*-only pattern. The adapter's own isSupportedPage()/matches() gating (linkedin.ts) keeps it inert on every non-job LinkedIn page; this only widens WHEN the (already-scoped) content script exists in the tab, not what it does."
     },
     {
       "id": "indeed",
