@@ -59,14 +59,15 @@ export const linkedInAdapter: JobSiteAdapter = {
     return (document.querySelector('main') as HTMLElement) || document.body;
   },
 
-  // The new beta UI is a virtualized lazy-column with hashed classes and cards
-  // whose anchors carry no stable text — per-card strips aren't reliably/ safely
-  // injectable there, so we only inject cards on the classic UI.
+  // Per-card list badges are dropped, matching every other adapter (Indeed,
+  // Glassdoor, ZipRecruiter, Workable, Greenhouse, Lever, Ashby, Workday,
+  // SmartRecruiters, iCIMS, generic all return no cards here too): the quick
+  // local estimate they show is a rough resume-title keyword-overlap heuristic
+  // with no LLM behind it, not the real score, and reads as inaccurate/noisy
+  // in a dense list. The details panel (the real, LLM-backed score) is
+  // unaffected.
   getJobCards() {
-    const cards = document.querySelectorAll<HTMLElement>(
-      'li.scaffold-layout__list-item, li.jobs-search-results__list-item, div.job-card-container',
-    );
-    return Array.from(cards).filter((c) => this.getJobId(c));
+    return [];
   },
 
   getJobId(card) {
