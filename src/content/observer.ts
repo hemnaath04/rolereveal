@@ -27,13 +27,17 @@ export function createObserver(process: () => void, ms = 150) {
       // detail IN PLACE — clicking another job toggles data-selected/aria-selected
       // /data-jobid on the cards without adding/removing nodes, which would
       // otherwise leave the panel keyed to the previously-selected job (stale).
-      // Deliberately NOT watching `class` (hover/animation churn) or characterData.
+      // characterData catches React sites that fill an existing title or job
+      // description text node in place. We still avoid `class`, whose hover and
+      // animation churn would continuously retrigger extraction.
       const opts: MutationObserverInit = {
         childList: true,
         subtree: true,
+        characterData: true,
         attributes: true,
         attributeFilter: [
           'aria-selected',
+          'aria-busy',
           'data-selected',
           'data-jobid',
           'data-job-id',
