@@ -135,8 +135,20 @@ async function main() {
     process();
   });
 
-  // Initial passes (the page may still be rendering at document_idle).
-  process();
-  window.setTimeout(process, 800);
-  window.setTimeout(process, 2000);
+  // Content scripts start at document_idle, but large job boards can keep
+  // hydrating their selected-job pane for several more seconds. A bounded
+  // backoff catches late mounts without leaving an expensive polling loop on
+  // every tab. The observer handles all later DOM changes.
+  for (const delay of [0, 350, 1000, 2500, 5000, 10000]) {
+    window.setTimeout(process, delay);
+  }
+
+  // Re-check when a tab returns from the back/forward cache or wakes after being
+  // hidden. Some browsers coalesce DOM mutations while a tab is in the
+  // background, so the observer alone is not a reliable wake-up signal.
+  window.addEventListener('pageshow', process);
+  window.addEventListener('focus', process);
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') process();
+  });
 }

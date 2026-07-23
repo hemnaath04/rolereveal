@@ -134,16 +134,28 @@ export function processSelectedJobDetails(adapter: JobSiteAdapter): void {
     return;
   }
   if (!checked.has(key)) {
-    // Wait one tick: ask the background session store whether this job was
-    // dismissed in this tab (e.g. before a reload) so it doesn't flash.
+    // Ask the background session store whether this job was dismissed in this
+    // tab (e.g. before a reload) so it doesn't flash. This pass returns while
+    // the answer is pending, so the promise MUST resume processing itself. On a
+    // settled SPA page there may be no later DOM mutation to trigger us again.
     checked.add(key);
     void chrome.runtime
       .sendMessage({ type: 'IS_DISMISSED', url: key })
       .then((r: IsDismissedResponse | undefined) => {
-        if (r?.dismissed) dismissed.add(key);
+        // The user may have selected another job while the message was in
+        // flight. Never let an old reply remove or mount the new job's panel.
+        if (currentDismissKey !== key) return;
+        if (r?.dismissed) {
+          dismissed.add(key);
+          removeDetailsHost();
+          return;
+        }
+        processSelectedJobDetails(adapter);
       })
       .catch(() => {
-        /* background unavailable — fall through to normal injection next tick */
+        // A temporarily unavailable service worker must not make the overlay
+        // disappear. `checked` is already set, so this retry proceeds normally.
+        if (currentDismissKey === key) processSelectedJobDetails(adapter);
       });
     return;
   }
@@ -307,13 +319,17 @@ function dismissCurrent(): void {
 export function clearDismissForCurrent(): void {
   const key = currentDismissKey ?? normalizeUrl(location.href);
   dismissed.delete(key);
-  checked.delete(key);
+  // The user explicitly requested the panel, so allow the synchronous process()
+  // that follows to mount immediately. Deleting this key would race
+  // CLEAR_DISMISS against a new IS_DISMISSED request and could close it again.
+  checked.add(key);
   void send({ type: 'CLEAR_DISMISS', url: key });
 }
 
 export function resetDetailsState(): void {
   detailsInFlight = null;
   detailsRenderedId = null;
+  currentDismissKey = null;
   // Invalidate any in-flight analysis (e.g. SPA route to a non-job page).
   analysisToken++;
 }
