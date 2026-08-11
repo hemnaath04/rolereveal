@@ -26,6 +26,8 @@ import type {
   EvaluateResponse,
   IsDismissedResponse,
   Message,
+  Resume,
+  Settings,
   TailorResponse,
 } from '../lib/types';
 
@@ -69,7 +71,7 @@ function resumeFingerprint(
     .join('|');
 }
 
-async function handleEvaluate(
+export async function handleEvaluate(
   msg: Extract<Message, { type: 'EVALUATE' }>,
 ): Promise<EvaluateResponse> {
   const settings = await getSettings();
@@ -92,6 +94,31 @@ async function handleEvaluate(
     if (cached) return { ok: true, result: cached.result, cached: true };
   }
 
+  // Coalesce identical work that's already running. The in-page panel and the
+  // popup's Run button are separate contexts, so clicking Run while the panel is
+  // still scoring used to fire two identical LLM calls in the same second — the
+  // second one is what trips a per-minute quota on the gateway's primary model.
+  // The content script's own detailsInFlight guard can't see the popup, so the
+  // dedupe has to live here, where every caller lands.
+  const running = inFlightEvals.get(key);
+  if (running) return running;
+  const work = runEvaluation(key, msg, settings, resumes);
+  inFlightEvals.set(key, work);
+  try {
+    return await work;
+  } finally {
+    inFlightEvals.delete(key);
+  }
+}
+
+const inFlightEvals = new Map<string, Promise<EvaluateResponse>>();
+
+async function runEvaluation(
+  key: string,
+  msg: Extract<Message, { type: 'EVALUATE' }>,
+  settings: Settings,
+  resumes: Resume[],
+): Promise<EvaluateResponse> {
   // Mask personal data before it leaves the device (default on). The full
   // resume stays in local storage; only the redacted copy is sent.
   const sendResumes =
