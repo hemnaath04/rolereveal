@@ -1,4 +1,4 @@
-# RoleReveal — Privacy Policy
+# RoleReveal: Privacy Policy
 
 _Last updated: 2026-06-27_
 
@@ -25,7 +25,7 @@ extension and displayed.
 
 - **Personal info is masked first (on by default).** Before the resume leaves
   your device, RoleReveal redacts your name, email, phone number, and links, and
-  replaces resume labels with generic ones ("Resume 1") — so your contact details
+  replaces resume labels with generic ones ("Resume 1"), so your contact details
   and name are **not** sent to the backend or the LLM. Skills and experience are
   kept so scoring still works. You can toggle this in Options.
 - This data is sent **only** to generate a score, when a job posting is detected
@@ -43,29 +43,29 @@ extension and displayed.
 - No tracking across sites; the extension only reads the content of a page when
   it detects a job posting on it.
 - No keystroke logging, no form data beyond the resume you explicitly add.
-- No scraping of profiles, connections, recruiters, or contact lists — only the
+- No scraping of profiles, connections, recruiters, or contact lists. Only the
   job description, title, and company are read.
 
 ## Passive by design
 RoleReveal only **reads** the job posting you are actively viewing. It does **not**
 click, submit, auto-apply, navigate, automate, or send any network request to the
 job site itself. The only outbound request is the scoring call to the backend /
-LLM provider described above. This is deliberate — it keeps the extension clear of
+LLM provider described above. This is deliberate: it keeps the extension clear of
 job-site automation rules and keeps your account safe.
 
 ## Permissions
-- **storage** — save your resumes, settings, and tracker on your device.
-- **activeTab** — when you click the RoleReveal toolbar button on a site that
+- **storage**: save your resumes, settings, and tracker on your device.
+- **activeTab**: when you click the RoleReveal toolbar button on a site that
   isn't one of the pre-listed boards, read the job posting on that one tab to
   score it. Access is temporary and not retained for the domain.
-- **scripting** — inject the scoring panel into the active tab in response to
+- **scripting**: inject the scoring panel into the active tab in response to
   that toolbar click. Never used for background or automatic injection.
-- **contextMenus** — provide a right-click "evaluate selected text" option.
-- **content scripts (curated list)** — the extension auto-runs only on a fixed
+- **contextMenus**: provide a right-click "evaluate selected text" option.
+- **content scripts (curated list)**: the extension auto-runs only on a fixed
   list of ~100 major job boards and ATS platforms (LinkedIn, Indeed, Glassdoor,
   Greenhouse, Lever, Ashby, Workday, SmartRecruiters, etc.). It does not request
   access to all sites; any other site is handled only via the toolbar action above.
-- **host access (LLM endpoints only)** — limited to the specific AI API
+- **host access (LLM endpoints only)**: limited to the specific AI API
   endpoints used to generate the score (the built-in service and any provider you
   choose). Not used to read your browsing.
 
