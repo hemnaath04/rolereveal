@@ -66,9 +66,57 @@ async function callAnthropic(
   return text;
 }
 
+// OpenAI's GPT-5+/GPT-6 and o-series models are reasoning models. On Chat
+// Completions they reject `temperature` unless reasoning effort is `none`, and
+// they take `max_completion_tokens` (which also counts hidden reasoning tokens)
+// instead of the deprecated `max_tokens`.
+const OPENAI_REASONING_MODEL = /^(gpt-([5-9]|\d{2,})|o\d)/i;
+// Reasoning models that cannot go down to `none`; they get `low` instead.
+const OPENAI_NO_NONE_EFFORT = /^(gpt-6-astra|gpt-6\.1-sol|o\d)/i;
+// Room for hidden reasoning tokens when effort can't be `none`, so the visible
+// JSON answer isn't cut off by finish_reason "length".
+const REASONING_HEADROOM_TOKENS = 2048;
+
+/** Builds the Chat Completions body. Exported for tests. */
+export function buildOpenAiBody(
+  providerId: string,
+  model: string,
+  args: ChatArgs,
+): Record<string, unknown> {
+  const body: Record<string, unknown> = {
+    model,
+    messages: [
+      { role: 'system', content: args.system },
+      { role: 'user', content: args.user },
+    ],
+  };
+  if (args.jsonMode) body.response_format = { type: 'json_object' };
+
+  if (providerId === 'openai' && OPENAI_REASONING_MODEL.test(model)) {
+    if (OPENAI_NO_NONE_EFFORT.test(model)) {
+      body.reasoning_effort = 'low';
+      body.max_completion_tokens = args.maxTokens + REASONING_HEADROOM_TOKENS;
+    } else {
+      body.reasoning_effort = 'none';
+      body.temperature = args.temperature;
+      body.max_completion_tokens = args.maxTokens;
+    }
+  } else if (providerId === 'openai') {
+    body.temperature = args.temperature;
+    body.max_completion_tokens = args.maxTokens;
+  } else {
+    // Other OpenAI-compatible providers and the built-in proxy still expect
+    // the classic fields.
+    body.temperature = args.temperature;
+    body.max_tokens = args.maxTokens;
+  }
+  return body;
+}
+
 async function callOpenAiCompatible(
   base: string,
   key: string,
+  providerId: string,
   model: string,
   args: ChatArgs,
   clientId?: string,
@@ -77,16 +125,7 @@ async function callOpenAiCompatible(
   if (key.trim()) headers['authorization'] = `Bearer ${key}`;
   // Let the built-in backend enforce a per-user daily quota without accounts.
   if (clientId) headers['x-client-id'] = clientId;
-  const body: Record<string, unknown> = {
-    model,
-    temperature: args.temperature,
-    max_tokens: args.maxTokens,
-    messages: [
-      { role: 'system', content: args.system },
-      { role: 'user', content: args.user },
-    ],
-  };
-  if (args.jsonMode) body.response_format = { type: 'json_object' };
+  const body = buildOpenAiBody(providerId, model, args);
 
   const res = await fetch(`${base}/chat/completions`, {
     method: 'POST',
@@ -136,7 +175,7 @@ export async function chatComplete(
   }
   // Only the built-in proxy gets the rate-limit client id.
   const clientId = p.id === 'builtin' ? args.clientId : undefined;
-  return callOpenAiCompatible(base, settings.apiKey, model, args, clientId);
+  return callOpenAiCompatible(base, settings.apiKey, p.id, model, args, clientId);
 }
 
 /**
